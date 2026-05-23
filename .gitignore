@@ -1,0 +1,13 @@
+# Dépendances
+node_modules/
+
+# Fichiers de build
+dist/
+dist-ssr/
+
+# Variables d'environnement
+.env
+.env.local
+
+# Fichiers système
+.DS_Store
