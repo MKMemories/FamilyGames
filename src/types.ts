@@ -1,5 +1,5 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore";
 
 export interface MemberPreset {
   name: string;

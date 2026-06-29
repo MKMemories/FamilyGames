@@ -16,6 +16,7 @@ export const GAMES: Game[] = [
   { id: "defi", name: "Défis Chrono", emoji: "⏱️", desc: "Mini-défis rigolos — le plus rapide gagne", min: 2, max: 4, color: "#e2f0cb" },
   { id: "justeprix", name: "Le Juste Prix", emoji: "💰", desc: "Estime le prix d'un objet — le plus proche gagne !", min: 1, max: 4, color: "#ffd6a5" },
   { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#caffbf" },
+  { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#9ec5ff" },
 ];
 
 export const LETTERS_FR: Record<string, number> = {
@@ -112,6 +113,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "justeprix") return { jpRound: 0, jpTotalRounds: 3, jpProduct: null, jpAnswers: {}, jpRevealed: false };
   if (game === "dessin") return { dessinManche: 0, dessinTotalManches: 0, dessinMot: null, dessinDessinateur: null, dessinPaths: [], dessinCorrectGuesser: null, dessinRoundActive: false, dessinGuessChat: [] };
   if (game === "scrabble") { const bag = buildBag(); return { bag, racks: {}, currentTurn: 0, roundWord: "", selectedTiles: [], wordHistory: [] }; }
+  if (game === "chronovore") return {};
   return {};
 }
 

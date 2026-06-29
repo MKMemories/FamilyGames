@@ -14,6 +14,7 @@ import { Quiz } from "./components/games/Quiz";
 import { Defi } from "./components/games/Defi";
 import { JustePrix } from "./components/games/JustePrix";
 import { Dessin } from "./components/games/Dessin";
+import { Chronovore } from "./components/games/Chronovore";
 import { Toast } from "./components/Toast";
 import type { AppState, GameId, Room } from "./types";
 
@@ -253,6 +254,7 @@ function App() {
           {game === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
+          {game === "chronovore" && <Chronovore onLeave={leaveRoom} />}
         </>
       )}
 

@@ -11,3 +11,6 @@ dist-ssr/
 
 # Fichiers système
 .DS_Store
+
+# tsc-emitted artifacts (build uses vite; source is .ts/.tsx)
+src/**/*.js
