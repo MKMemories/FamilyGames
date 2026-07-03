@@ -1,4 +1,5 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
+export type Difficulty = "facile" | "moyen" | "difficile";
 export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion";
 
 export interface MemberPreset {
@@ -69,6 +70,9 @@ export interface Room {
   scores: Record<string, number>;
   winner?: string;
   createdAt: number;
+  // Solo vs computer
+  aiId?: string;                                   // playerId of the computer (present ⇒ solo-vs-AI)
+  soloDifficulty?: "facile" | "moyen" | "difficile";
   // Connect4 / Checkers / Chess
   board?: any[][];
   currentTurn?: number;

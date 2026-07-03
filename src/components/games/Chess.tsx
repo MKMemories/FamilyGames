@@ -2,6 +2,8 @@ import { useState } from "react";
 import { dbRef, update } from "../../lib/firebase";
 import { CHESS_INIT, CHESS_UNICODE } from "../../lib/gameData";
 import { legalMoves, applyMove, isPromotion, statusFor, type Ctx } from "../../lib/chessRules";
+import { useSoloAI } from "../../hooks/useSoloAI";
+import { bestChessMove } from "../../lib/ai/chessAI";
 import type { Room } from "../../types";
 
 interface ChessProps {
@@ -32,10 +34,15 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
   const isMine = (cell: string) =>
     cell !== "" && (isWhite ? cell === cell.toUpperCase() : cell === cell.toLowerCase());
 
-  // Commit a fully-validated move to Firebase.
-  const commit = (from: [number, number], to: [number, number], promoteTo: string) => {
+  // Commit a fully-validated move to Firebase. Mover-agnostic: the side to
+  // move is derived from `currentTurn` (white on even turns), so the SAME
+  // path serves both a human click and the AI's move.
+  const commitMove = (from: [number, number], to: [number, number], promoteTo = "Q") => {
+    const moverIdx = currentTurn % 2;          // 0 = white, 1 = black
+    const moverWhite = moverIdx === 0;
+    const mover = players[moverIdx];
     const { board: nb, castle, ep } = applyMove(board, from, to, ctx, promoteTo);
-    const st = statusFor(nb, !isWhite, { castle, ep }); // status for the opponent (next to move)
+    const st = statusFor(nb, !moverWhite, { castle, ep }); // status for the opponent (next to move)
 
     const upd: Record<string, unknown> = {
       board: nb,
@@ -47,9 +54,10 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
       chessCheck: st.king,
     };
     if (st.status === "checkmate") {
-      upd.winner = players[myIdx]?.name ?? "?";
+      upd.winner = mover?.name ?? "?";
       upd.status = "finished";
-      upd.scores = { ...(room.scores || {}), [playerId]: ((room.scores || {})[playerId] || 0) + 10 };
+      const mid = mover?.id;
+      if (mid) upd.scores = { ...(room.scores || {}), [mid]: ((room.scores || {})[mid] || 0) + 10 };
     } else if (st.status === "stalemate") {
       upd.winner = "Égalité";
       upd.status = "finished";
@@ -84,8 +92,21 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
 
     // Legal destination: promotion needs a picker first, otherwise commit.
     if (isPromotion(board, sel, [r, c])) { setPromo({ from: sel, to: [r, c] }); return; }
-    commit(sel, [r, c], "Q");
+    commitMove(sel, [r, c], "Q");
   };
+
+  // ── Computer opponent (solo vs AI) ──────────────────────────────────
+  // Only active when the room carries an `aiId` (solo mode). In multiplayer
+  // there is no aiId, so `aiTurn` is always false and this has no effect.
+  const aiId = room.aiId;
+  const aiIdx = aiId ? players.findIndex(p => p.id === aiId) : -1;
+  const aiTurn = !!aiId && aiIdx >= 0 && !room.winner && currentTurn % 2 === aiIdx;
+
+  const playAIMove = () => {
+    const mv = bestChessMove(board, aiIdx === 0, ctx, room.soloDifficulty || "moyen");
+    if (mv) commitMove(mv.from, mv.to, mv.promo || "Q");
+  };
+  useSoloAI(aiTurn, currentTurn, () => playAIMove());
 
   const turnName = (players[currentTurn % 2] || {}).name || "…";
   const inCheck = !!check && !room.winner;
@@ -97,6 +118,7 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
         <div className="turn-indicator" style={{ background: isMyTurn ? "rgba(76,175,80,.2)" : "rgba(0,0,0,.05)" }}>
           {isMyTurn ? "🟢 Ton tour" : `⏳ ${turnName}`}
           {inCheck && <span className="chess-check-badge">Échec !</span>}
+          {aiTurn && <span className="ai-thinking" style={{ marginLeft: ".45rem" }}><span className="ai-dot" />🤖 réfléchit…</span>}
         </div>
         <div className="score-mini">
           {players.map((p, i) => (
@@ -149,7 +171,7 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
                   <button
                     key={pc}
                     className="chess-promo-btn"
-                    onClick={() => commit(promo.from, promo.to, pc)}
+                    onClick={() => commitMove(promo.from, promo.to, pc)}
                   >
                     {CHESS_UNICODE[glyph]}
                   </button>

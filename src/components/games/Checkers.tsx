@@ -7,6 +7,8 @@ import {
   hasAnyMove,
   legalMovesFrom,
 } from "../../lib/checkersRules";
+import { bestCheckersTurn } from "../../lib/ai/checkersAI";
+import { useSoloAI } from "../../hooks/useSoloAI";
 import type { Room } from "../../types";
 
 // Piece colours: player 0 = red, player 1 = dark (kept from original).
@@ -55,6 +57,43 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
   const sel = (room.selected || null) as [number, number] | null;
   const hints = (room.hints || []) as [number, number][];
   const chain = (room.chkChain || null) as [number, number] | null;
+
+  // --- Solo mode: computer opponent -------------------------------------
+  // In solo mode the room carries an `aiId`; the AI is one of the players.
+  // This is inert (aiTurn === false, useSoloAI never fires) in multiplayer.
+  const aiId = room.aiId;
+  const aiIdx = aiId ? players.findIndex(p => p.id === aiId) : -1;
+  const aiTurn = !!aiId && aiIdx >= 0 && !room.winner && currentTurn % 2 === aiIdx;
+
+  const playAITurn = () => {
+    if (!aiId || aiIdx < 0 || room.winner) return;
+    const path = bestCheckersTurn(board, aiIdx, room.soloDifficulty || "moyen");
+    if (!path || path.length < 2) return;
+
+    // Apply the whole turn (multi-jump chains included) ATOMICALLY: fold
+    // applyMove over consecutive squares, then write ONE update so no chain
+    // state ever leaks to the human player.
+    let finalBoard = board;
+    for (let i = 0; i < path.length - 1; i++) {
+      finalBoard = applyMove(finalBoard, path[i], path[i + 1], aiIdx).board;
+    }
+
+    const humanIdx = aiIdx === 0 ? 1 : 0;
+    const upd: Record<string, unknown> = {
+      board: finalBoard,
+      selected: null,
+      hints: [],
+      chkChain: null,
+      currentTurn: currentTurn + 1,
+    };
+    if (!hasAnyMove(finalBoard, humanIdx)) {
+      upd.winner = (players[aiIdx] || {}).name || "Ordinateur";
+      upd.status = "finished";
+    }
+    update(dbRef(`games/${roomId}`), upd);
+  };
+
+  useSoloAI(aiTurn, currentTurn, () => playAITurn());
 
   // Mandatory-capture flag for the player to move.
   const mustCapture = myIdx >= 0 && hasAnyCapture(board, myIdx);
@@ -141,6 +180,9 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
           {isMyTurn ? "🟢 Ton tour" : `⏳ ${turnName}`}
         </div>
         <div className="score-mini">
+          {aiTurn && (
+            <span className="ai-thinking"><span className="ai-dot" />🤖 réfléchit…</span>
+          )}
           {players.map((p, i) => (
             <span key={p.id} style={{ color: PCOL[i % 2] }}>{p.name.slice(0, 4)}</span>
           ))}

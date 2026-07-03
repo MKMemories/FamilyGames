@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { dbRef, update } from "../../lib/firebase";
 import type { Room } from "../../types";
+import { useSoloAI } from "../../hooks/useSoloAI";
+import { placeAIFleet, chooseAIShot, type Difficulty } from "../../lib/ai/batailleAI";
 
 /* ════════════════════════════════════════════════════════════════════════
    BATAILLE NAVALE — Battleship, strictly 2 players, one screen each.
@@ -128,7 +130,15 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
   const players = Object.values(room.players || {});
   const opponentId = players.find((p) => p.id !== playerId)?.id;
   const opponent = players.find((p) => p.id !== playerId);
-  const hasOpponent = !!opponentId && !isSolo;
+
+  // ── Solo-vs-computer wiring (only when the room carries an aiId) ───────
+  // In solo the local player is the human; the AI is the other player.
+  const aiId = room.aiId;
+  const humanId = playerId;
+  const diff: Difficulty = (room.soloDifficulty as Difficulty) || "moyen";
+
+  // An opponent is present in real multiplayer OR when the AI is in the room.
+  const hasOpponent = !!opponentId && (!isSolo || !!aiId);
 
   const write = (upd: Record<string, any>) => update(dbRef(`games/${roomId}`), upd);
 
@@ -232,6 +242,41 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
     }
     write(upd);
   };
+
+  // ── Computer opponent (solo only; no-ops entirely without an aiId) ────
+  // 1) AI placement: as soon as it needs a fleet, drop a random valid one and
+  //    ready up. Nested-path write so we never clobber the human's grid.
+  const aiPlaceActive = !!aiId && phase !== "battle" && phase !== "over" && !ready[aiId];
+  useSoloAI(aiPlaceActive, "place", () => {
+    if (!aiId) return;
+    write({ [`bnGrids/${aiId}`]: placeAIFleet(), [`bnReady/${aiId}`]: true });
+  });
+
+  // 2) AI firing: on its turn, pick a cell from its OWN past shots, resolve it
+  //    against the human's fleet, record it, then win-or-pass. Keyed on the
+  //    number of shots the AI has taken so each distinct turn fires once.
+  const aiFireActive = !!aiId && phase === "battle" && turn === aiId && !winner;
+  const aiShotCount = Object.keys((shots[aiId || ""] || {})).length;
+  const playAIShot = () => {
+    if (!aiId) return;
+    const aiShots: ShotMap = shots[aiId] || {};
+    const humanGrid = grids[humanId];
+    if (!humanGrid) return;
+    const [r, c] = chooseAIShot(aiShots, diff);
+    const k = key(r, c);
+    if (aiShots[k]) return; // safety: never re-fire the same square
+    const result: "hit" | "miss" = humanGrid[r][c] === 1 ? "hit" : "miss";
+    const nextShots: ShotMap = { ...aiShots, [k]: result };
+    const upd: Record<string, any> = { [`bnShots/${aiId}/${k}`]: result };
+    if (result === "hit" && allSunk(humanGrid, nextShots)) {
+      upd.bnWinner = aiId;
+      upd.bnPhase = "over";
+    } else {
+      upd.bnTurn = humanId; // pass the turn back to the human
+    }
+    write(upd);
+  };
+  useSoloAI(aiFireActive, `fire:${aiShotCount}`, playAIShot);
 
   // ── Host replay reset ─────────────────────────────────────────────────
   const replay = () => {
@@ -360,6 +405,7 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
               </div>
 
               <div className="bn-fire-label">Grille adverse {isMyTurn ? "— tire !" : ""}</div>
+              {aiFireActive && <div className="ai-thinking">🤖 vise…</div>}
               {renderGrid({
                 variant: "fire",
                 onCellClick: (r, c) => isMyTurn && fire(r, c),

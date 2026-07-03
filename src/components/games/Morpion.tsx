@@ -1,4 +1,6 @@
 import { dbRef, update } from "../../lib/firebase";
+import { useSoloAI } from "../../hooks/useSoloAI";
+import { bestMorpionMove } from "../../lib/ai/morpionAI";
 import type { Room } from "../../types";
 
 /* ── Morpion (Tic-Tac-Toe) · 2 joueurs, chacun son écran ──
@@ -52,26 +54,39 @@ export function Morpion({ room, roomId, playerId, isHost, isSolo, onLeave, onToa
 
   const markGlyph = (m: string) => (m === "X" ? "✗" : m === "O" ? "◯" : "");
 
+  // Shared move commit — used by both the human tap and the AI.
+  const commitAt = (i: number, mark: string, moverId: string) => {
+    if (cells[i]) return;
+    const next = [...cells];
+    next[i] = mark;
+    const w = findWin(next);
+    const full = next.every(c => c !== "");
+    const other = players.find(p => p.id !== moverId);
+    if (w) {
+      update(dbRef(`games/${roomId}`), { mpCells: next, mpWinner: moverId, mpLine: w.line });
+    } else if (full) {
+      update(dbRef(`games/${roomId}`), { mpCells: next, mpWinner: "draw", mpLine: [] });
+    } else {
+      update(dbRef(`games/${roomId}`), { mpCells: next, mpTurn: other ? other.id : moverId });
+    }
+  };
+
   const play = (i: number) => {
     if (winner) return;
     if (players.length < 2) { onToast("En attente de l'adversaire…"); return; }
     if (turn !== playerId) { onToast("Ce n'est pas ton tour !"); return; }
-    if (cells[i]) return;
-
-    const next = [...cells];
-    next[i] = myMark;
-    const w = findWin(next);
-    const full = next.every(c => c !== "");
-
-    if (w) {
-      update(dbRef(`games/${roomId}`), { mpCells: next, mpWinner: playerId, mpLine: w.line });
-    } else if (full) {
-      update(dbRef(`games/${roomId}`), { mpCells: next, mpWinner: "draw", mpLine: [] });
-    } else {
-      const nextTurn = opponent ? opponent.id : playerId;
-      update(dbRef(`games/${roomId}`), { mpCells: next, mpTurn: nextTurn });
-    }
+    commitAt(i, myMark, playerId);
   };
+
+  // Computer opponent (solo). Plays once per board state when it's the AI's turn.
+  const aiId = room.aiId;
+  const aiTurn = !!aiId && !winner && turn === aiId && players.length >= 2;
+  useSoloAI(aiTurn, cells.filter(Boolean).length, () => {
+    if (!aiId) return;
+    const aiMark = aiId === room.hostId ? "X" : "O";
+    const idx = bestMorpionMove(cells, aiMark, room.soloDifficulty || "moyen");
+    if (idx >= 0) commitAt(idx, aiMark, aiId);
+  });
 
   const replay = () => {
     update(dbRef(`games/${roomId}`), {
@@ -88,7 +103,7 @@ export function Morpion({ room, roomId, playerId, isHost, isSolo, onLeave, onToa
         <div className="turn-indicator">
           {winner
             ? (winner === "draw" ? "Match nul !" : `${winnerPlayer?.name} gagne !`)
-            : (isMyTurn ? "À toi de jouer" : `Au tour de ${turnPlayer?.name || "…"}`)}
+            : (isMyTurn ? "À toi de jouer" : aiTurn ? `🤖 ${turnPlayer?.name} réfléchit…` : `Au tour de ${turnPlayer?.name || "…"}`)}
         </div>
         <div className="mp-mark-badge" title="Ton symbole">{markGlyph(myMark)}</div>
       </div>

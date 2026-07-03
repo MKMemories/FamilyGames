@@ -1,4 +1,15 @@
-import type { Game, MemberPreset, GameId } from "../types";
+import type { Game, MemberPreset, GameId, Difficulty } from "../types";
+
+/* ── Solo vs Ordinateur ── */
+export const AI_ID = "zzz-ai";
+export const AI_PLAYER = { id: AI_ID, name: "Ordinateur", color: "#8b93a7", emoji: "🤖" };
+export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille"]);
+export function gameSupportsAI(g: GameId): boolean { return AI_GAMES.has(g); }
+export const DIFFICULTIES: { id: Difficulty; label: string; emoji: string; desc: string }[] = [
+  { id: "facile", label: "Facile", emoji: "🙂", desc: "L'ordinateur joue simplement" },
+  { id: "moyen", label: "Moyen", emoji: "😏", desc: "Un adversaire équilibré" },
+  { id: "difficile", label: "Difficile", emoji: "😈", desc: "L'ordinateur joue pour gagner" },
+];
 
 export const MEMBER_PRESETS: MemberPreset[] = [
   { name: "Mohamed", color: "#ff87b2", emoji: "👨" },

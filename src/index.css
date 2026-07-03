@@ -1522,3 +1522,25 @@ input { border: none; outline: none; }
   border: 1px solid rgba(255,255,255,0.20) !important;
   backdrop-filter: blur(6px);
 }
+
+/* ── Solo difficulty picker ── */
+.difficulty-grid { display: flex; flex-direction: column; gap: .55rem; margin-top: .3rem; }
+.difficulty-btn {
+  display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto;
+  column-gap: .7rem; align-items: center; text-align: left;
+  padding: .7rem .9rem; border-radius: var(--radius);
+  background: var(--surface-1); border: 1.5px solid var(--border);
+  box-shadow: var(--shadow); color: var(--text);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), border-color .18s, box-shadow .18s;
+}
+.difficulty-btn:hover { transform: translateY(-2px); }
+.difficulty-btn .diff-emoji { grid-row: 1 / span 2; font-size: 1.8rem; }
+.difficulty-btn .diff-label { font-weight: 900; font-size: 1rem; }
+.difficulty-btn .diff-desc { font-size: .74rem; font-weight: 700; color: var(--muted); }
+.difficulty-btn.diff-facile:hover { border-color: var(--green); box-shadow: 0 8px 24px color-mix(in srgb, var(--green) 34%, transparent); }
+.difficulty-btn.diff-moyen:hover { border-color: var(--gold); box-shadow: 0 8px 24px color-mix(in srgb, var(--gold) 34%, transparent); }
+.difficulty-btn.diff-difficile:hover { border-color: var(--danger); box-shadow: 0 8px 24px color-mix(in srgb, var(--danger) 34%, transparent); }
+
+/* AI opponent thinking hint */
+.ai-thinking { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-weight: 800; font-size: .85rem; }
+.ai-thinking .mp-dot, .ai-thinking .ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: mpPulse 1s ease infinite; }

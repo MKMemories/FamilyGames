@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { dbRef, set, get, onValue, update, remove } from "./lib/firebase";
-import { uid, getInitData, buildBag, MEMBER_PRESETS, GAMES } from "./lib/gameData";
+import { uid, getInitData, buildBag, MEMBER_PRESETS, GAMES, AI_PLAYER, gameSupportsAI } from "./lib/gameData";
 import { HomeScreen } from "./components/HomeScreen";
 import { PickScreen } from "./components/PickScreen";
 import { SetupScreen } from "./components/SetupScreen";
@@ -22,7 +22,7 @@ import { Morpion } from "./components/games/Morpion";
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useTheme } from "./hooks/useTheme";
-import type { AppState, GameId, Room } from "./types";
+import type { AppState, GameId, Room, Difficulty } from "./types";
 
 function App() {
   const [state, setState] = useState<AppState>({
@@ -82,7 +82,7 @@ function App() {
     subscribeRoom(roomId);
   };
 
-  const startSoloMode = async (gameId: GameId) => {
+  const startSoloMode = async (gameId: GameId, difficulty?: Difficulty) => {
     const { playerId, playerName, playerColor } = state;
     if (!playerId || !playerName) { showToast("Choisis ton prénom d'abord !"); return; }
     const roomId = uid();
@@ -97,14 +97,26 @@ function App() {
       b = b.slice(7);
       extra = { racks, bag: b };
     }
+
+    // Solo vs computer: add the AI as a second player (games that support it).
+    const players: Record<string, any> = { [playerId]: playerObj };
+    const scores: Record<string, number> = { [playerId]: 0 };
+    let aiFields: Record<string, any> = {};
+    if (difficulty && gameSupportsAI(gameId)) {
+      players[AI_PLAYER.id] = { ...AI_PLAYER };
+      scores[AI_PLAYER.id] = 0;
+      aiFields = { aiId: AI_PLAYER.id, soloDifficulty: difficulty };
+    }
+
     const roomData: any = {
       id: roomId, game: gameId, status: "playing",
       hostId: playerId,
-      players: { [playerId]: playerObj },
-      scores: { [playerId]: 0 },
+      players,
+      scores,
       createdAt: Date.now(),
       ...initData,
       ...extra,
+      ...aiFields,
     };
     await set(dbRef(`games/${roomId}`), roomData);
     setState(s => ({ ...s, game: gameId, roomId, isHost: true, isSolo: true, screen: "game" }));
@@ -220,7 +232,7 @@ function App() {
           onBack={() => go("pick")}
           onCreate={createRoom}
           onJoin={joinRoom}
-          onSolo={() => startSoloMode(game)}
+          onSolo={(d?: Difficulty) => startSoloMode(game, d)}
           onToast={showToast}
         />
       )}
