@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { MEMBER_PRESETS } from "../lib/gameData";
+import { Logo } from "./Logo";
 
 interface HomeScreenProps {
   playerName: string | null;
@@ -38,7 +39,14 @@ export function HomeScreen({ playerName, onSelectPlayer, onContinue, onToast }: 
         transition={{ type: "spring", stiffness: 260, damping: 26 }}
       >
         <div className="home-logo">
-          <span className="logo-badge">🎮</span>
+          <motion.div
+            className="logo-badge"
+            initial={{ scale: 0, rotate: -25 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.05 }}
+          >
+            <Logo size={92} idSuffix="home" />
+          </motion.div>
           <h1 className="logo-title">Family Game Night</h1>
           <div className="logo-sub">KHELIJ</div>
           <p className="home-tagline">Le salon de jeux de la famille — chacun son écran, tous ensemble ✨</p>

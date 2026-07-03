@@ -8,19 +8,19 @@ export const MEMBER_PRESETS: MemberPreset[] = [
 ];
 
 export const GAMES: Game[] = [
-  { id: "scrabble", name: "Mot pour Mot", emoji: "🔤", desc: "Scrabble familial — forme des mots, marque des points", min: 2, max: 4, color: "#b5ead7" },
-  { id: "chess", name: "Échecs", emoji: "♟️", desc: "Échecs classique 8×8 — Rois, reines, stratégie", min: 2, max: 2, color: "#c7ceea" },
-  { id: "checkers", name: "Dames", emoji: "⬛", desc: "Jeu de dames — captures et dames couronnées", min: 2, max: 2, color: "#ffdac1" },
-  { id: "connect4", name: "Puissance 4", emoji: "🔴", desc: "Aligne 4 jetons avant ton adversaire", min: 2, max: 2, color: "#fff9c2" },
-  { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Questions sur la famille, la culture et le monde", min: 2, max: 4, color: "#fce1e4" },
-  { id: "defi", name: "Défis Chrono", emoji: "⏱️", desc: "Mini-défis rigolos — le plus rapide gagne", min: 2, max: 4, color: "#e2f0cb" },
-  { id: "justeprix", name: "Le Juste Prix", emoji: "💰", desc: "Estime le prix d'un objet — le plus proche gagne !", min: 1, max: 4, color: "#ffd6a5" },
-  { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#caffbf" },
-  { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#ff9db0" },
-  { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#8fd9b6" },
-  { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#7cb8ff" },
-  { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#ffbf6b" },
-  { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#9ec5ff" },
+  { id: "scrabble", name: "Mot pour Mot", emoji: "🔤", desc: "Scrabble familial — forme des mots, marque des points", min: 2, max: 4, color: "#14b8a6" },
+  { id: "chess", name: "Échecs", emoji: "♟️", desc: "Échecs classique 8×8 — Rois, reines, stratégie", min: 2, max: 2, color: "#6366f1" },
+  { id: "checkers", name: "Dames", emoji: "⬛", desc: "Jeu de dames — captures et dames couronnées", min: 2, max: 2, color: "#f59e0b" },
+  { id: "connect4", name: "Puissance 4", emoji: "🔴", desc: "Aligne 4 jetons avant ton adversaire", min: 2, max: 2, color: "#ef4444" },
+  { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Questions sur la famille, la culture et le monde", min: 2, max: 4, color: "#ec4899" },
+  { id: "defi", name: "Défis Chrono", emoji: "⏱️", desc: "Mini-défis rigolos — le plus rapide gagne", min: 2, max: 4, color: "#84cc16" },
+  { id: "justeprix", name: "Le Juste Prix", emoji: "💰", desc: "Estime le prix d'un objet — le plus proche gagne !", min: 1, max: 4, color: "#fb923c" },
+  { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#22c55e" },
+  { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#f43f5e" },
+  { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#10b981" },
+  { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#3b82f6" },
+  { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6" },
+  { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8" },
 ];
 
 /* ── L'Imposteur : paires de mots (civil / imposteur, proches mais différents) ── */

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import type { Room, Player } from "../types";
 
 interface ResultScreenProps {
@@ -8,33 +8,28 @@ interface ResultScreenProps {
   onHome: () => void;
 }
 
-/* Deterministic confetti so it doesn't flicker on re-render */
-const CONFETTI_COLORS = ["#FFD700", "#ff6b6b", "#4ecdc4", "#45b7d1", "#f9ca24", "#a29bfe", "#fd79a8", "#55efc4"];
-const CONFETTI = Array.from({ length: 28 }, (_, i) => ({
+/* Deterministic confetti + streamers so they don't reshuffle on re-render */
+const CONFETTI_COLORS = ["#ffd54a", "#ff5b93", "#4ecdc4", "#7b5cff", "#ffb638", "#38d9a9", "#ff8fb1", "#63b3ff"];
+const CONFETTI = Array.from({ length: 48 }, (_, i) => ({
   id: i,
-  left: `${(i * 3.7) % 100}%`,
-  delay: `${(i * 0.09) % 2.2}s`,
-  duration: `${2.2 + (i % 5) * 0.4}s`,
+  left: `${(i * 2.11) % 100}%`,
+  delay: `${(i * 0.07) % 2.6}s`,
+  duration: `${2.4 + (i % 6) * 0.4}s`,
   color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  size: 7 + (i % 4) * 3,
-  round: i % 3 === 0,
+  size: 6 + (i % 4) * 3,
+  streamer: i % 3 === 0,
+  round: i % 4 === 0,
+  drift: `${((i % 5) - 2) * 24}px`,
 }));
 
-/* Podium heights & colours per rank */
-const BAR_H   = [148, 104, 72];   // 1st | 2nd | 3rd
-const BAR_CLR = ["#FFD700", "#C0C0C0", "#CD7F32"];
-const MEDALS  = ["🥇", "🥈", "🥉", "4️⃣"];
-
-/* Delay schedule (seconds) — 3rd rises first, 1st last = drama */
-const BAR_DELAY   = [0.55, 0.30, 0.10]; // indexed by rank
-const DROP_DELAY  = [0.95, 0.65, 0.45];
-const MEDAL_DELAY = [1.35, 1.05, 0.85];
+const BAR_H = [150, 106, 74];
+const BAR_CLR = ["linear-gradient(180deg,#ffe27a,#f0ab34)", "linear-gradient(180deg,#e6ecff,#aeb7d6)", "linear-gradient(180deg,#f0b98a,#c97f45)"];
+const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 
 export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenProps) {
-  const scores  = room.scores || {};
+  const scores = room.scores || {};
   const allPlayers = Object.values(room.players || {});
 
-  /* Sort: winner first (board games), then by score */
   const sorted: Player[] = [...allPlayers].sort((a, b) => {
     if (room.winner) {
       if (a.name === room.winner) return -1;
@@ -44,105 +39,124 @@ export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenPr
   });
 
   const hasScores = sorted.some(p => (scores[p.id] || 0) > 0);
-
-  /* Classic podium display order: 2nd | 1st | 3rd */
   const top3 = sorted.slice(0, 3);
   const podiumOrder =
-    top3.length >= 2
-      ? [top3[1], top3[0], top3[2]].filter((x): x is Player => !!x)
-      : top3;
-
-  const fourth = sorted[3];
+    top3.length >= 2 ? [top3[1], top3[0], top3[2]].filter((x): x is Player => !!x) : top3;
   const winner = sorted[0];
+  const isDraw = room.winner === "Égalité";
 
   return (
     <div className="screen podium-screen">
+      <div className="podium-glow" />
 
-      {/* Confetti */}
       {CONFETTI.map(c => (
-        <div
+        <span
           key={c.id}
-          className="confetti-piece"
+          className={`confetti-piece ${c.streamer ? "streamer" : ""}`}
           style={{
             left: c.left,
             animationDelay: c.delay,
             animationDuration: c.duration,
             background: c.color,
-            width: c.size,
-            height: c.size,
+            width: c.streamer ? 4 : c.size,
+            height: c.streamer ? c.size * 3.4 : c.size,
             borderRadius: c.round ? "50%" : "2px",
-          }}
+            ["--drift" as string]: c.drift,
+          } as React.CSSProperties}
         />
       ))}
 
       {/* Header */}
       <div className="podium-header">
-        <div className="podium-trophy">🏆</div>
-        <h2 className="podium-title">Partie terminée !</h2>
-        {winner && (
-          <div className="podium-winner-name">
+        <motion.div
+          className="podium-trophy"
+          initial={{ scale: 0, rotate: -25, y: -20 }}
+          animate={{ scale: 1, rotate: 0, y: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 12, delay: 0.1 }}
+        >
+          <motion.span
+            style={{ display: "inline-block" }}
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+          >
+            {isDraw ? "🤝" : "🏆"}
+          </motion.span>
+        </motion.div>
+        <motion.h2
+          className="podium-title"
+          initial={{ opacity: 0, y: -14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          {isDraw ? "Égalité !" : "Partie terminée !"}
+        </motion.h2>
+        {winner && !isDraw && (
+          <motion.div
+            className="podium-winner-name"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.45 }}
+          >
             {winner.emoji} <span style={{ color: winner.color || "#FFD700" }}>{winner.name}</span> gagne !
-          </div>
+          </motion.div>
         )}
       </div>
 
       {/* Podium stage */}
       <div className="podium-stage">
         {podiumOrder.map(p => {
-          const rank = sorted.indexOf(p); // 0=1st, 1=2nd, 2=3rd
-          const barH    = BAR_H[rank]   ?? 56;
-          const barClr  = BAR_CLR[rank] ?? "#a0a0a0";
-          const barDly  = BAR_DELAY[rank]   ?? 1;
-          const dropDly = DROP_DELAY[rank]  ?? 1.2;
-          const medDly  = MEDAL_DELAY[rank] ?? 1.6;
-
+          const rank = sorted.indexOf(p);
+          const barH = BAR_H[rank] ?? 56;
+          const barClr = BAR_CLR[rank] ?? "linear-gradient(180deg,#9aa0b8,#7a8098)";
+          const dropDly = 0.5 + (2 - rank) * 0.18;
           return (
             <div key={p.id} className="podium-slot">
-              {/* Player card — drops from above */}
-              <div
+              <motion.div
                 className="podium-player"
-                style={{ animationDelay: `${dropDly}s` }}
+                initial={{ opacity: 0, y: -50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 18, delay: dropDly }}
               >
-                <div className="podium-avatar">{p.emoji}</div>
-                <div className="podium-pname" style={{ color: p.color || "#fff" }}>
-                  {p.name}
-                </div>
-                <div
+                <div className="podium-avatar" style={{ ["--pc" as string]: p.color }}>{p.emoji}</div>
+                <div className="podium-pname" style={{ color: p.color || "#fff" }}>{p.name}</div>
+                <motion.div
                   className="podium-medal"
-                  style={{ animationDelay: `${medDly}s` }}
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 12, delay: dropDly + 0.35 }}
                 >
                   {MEDALS[rank]}
-                </div>
-              </div>
-
-              {/* Rising bar */}
-              <div
+                </motion.div>
+              </motion.div>
+              <motion.div
                 className="podium-bar"
-                style={{
-                  "--ph": `${barH}px`,
-                  "--pc": barClr,
-                  "--pd": `${barDly}s`,
-                } as React.CSSProperties}
+                style={{ background: barClr }}
+                initial={{ height: 0, opacity: 0.5 }}
+                animate={{ height: barH, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 120, damping: 18, delay: dropDly + 0.1 }}
               >
                 {hasScores && rank === 0 && (
                   <span className="podium-bar-score">{scores[p.id] || 0} pts</span>
                 )}
-              </div>
+              </motion.div>
             </div>
           );
         })}
       </div>
 
       {/* Full ranking list */}
-      <div className="podium-ranking">
+      <motion.div
+        className="podium-ranking"
+        initial="hidden"
+        animate="show"
+        variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08, delayChildren: 1.3 } } }}
+      >
         {sorted.map((p, i) => (
-          <div
+          <motion.div
             key={p.id}
             className="podium-rank-row"
-            style={{
-              animationDelay: `${1.6 + i * 0.12}s`,
-              borderLeftColor: p.color || "var(--accent)",
-            }}
+            style={{ borderLeftColor: p.color || "var(--accent)" }}
+            variants={{ hidden: { opacity: 0, x: -24 }, show: { opacity: 1, x: 0 } }}
           >
             <span className="prr-medal">{MEDALS[i] || `${i + 1}.`}</span>
             <span className="prr-emoji">{p.emoji}</span>
@@ -150,19 +164,24 @@ export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenPr
             {hasScores ? (
               <span className="prr-score">{scores[p.id] || 0} pts</span>
             ) : (
-              i === 0 && <span className="prr-badge">🏆 Gagnant</span>
+              i === 0 && !isDraw && <span className="prr-badge">🏆 Gagnant</span>
             )}
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       {/* Actions */}
-      <div className="podium-actions">
+      <motion.div
+        className="podium-actions"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.9 }}
+      >
         {isHost && (
           <button className="btn btn-primary" onClick={onRestart}>🔄 Rejouer</button>
         )}
         <button className="btn btn-ghost podium-home-btn" onClick={onHome}>🏠 Accueil</button>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -1453,3 +1453,72 @@ input { border: none; outline: none; }
   color: var(--text); border-bottom: 1px solid var(--border);
 }
 .game-hint-txt { color: var(--muted); }
+
+/* ══════════════════════════════════════════════════════════════
+   PREMIUM POLISH v2 — logo, victory screen, win moments
+══════════════════════════════════════════════════════════════ */
+
+/* ── Brand logo mark ── */
+.logo-badge { display: inline-flex; animation: none; filter: drop-shadow(0 12px 28px color-mix(in srgb, var(--accent) 55%, transparent)); }
+.khelij-logo { display: block; }
+.khelij-logo-spark { transform-box: fill-box; transform-origin: center; animation: sparkPulse 2.8s ease-in-out infinite; }
+@keyframes sparkPulse {
+  0%, 100% { opacity: .82; transform: scale(0.94) rotate(0deg); }
+  50%      { opacity: 1;   transform: scale(1.16) rotate(45deg); }
+}
+
+/* ── Victory / podium glow-up ── */
+.podium-screen {
+  background:
+    radial-gradient(ellipse at 50% -8%, #341f7a 0%, #1a1147 52%, #0c0820 100%);
+}
+.podium-glow {
+  position: absolute; top: -12%; left: 50%; transform: translateX(-50%);
+  width: 130%; height: 62%; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255,205,90,0.24), rgba(255,120,180,0.10) 40%, transparent 66%);
+  filter: blur(4px);
+  animation: glowPulse 4s ease-in-out infinite;
+}
+@keyframes glowPulse { 0%,100%{opacity:.75;transform:translateX(-50%) scale(1)} 50%{opacity:1;transform:translateX(-50%) scale(1.06)} }
+
+/* framer-motion now drives these — silence the old CSS keyframe animations */
+.podium-player, .podium-medal, .podium-bar, .podium-rank-row, .podium-actions { animation: none !important; opacity: 1; }
+.podium-bar { height: auto; }
+
+.podium-avatar {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 1.9rem;
+  background: color-mix(in srgb, var(--pc, #ffffff) 26%, rgba(255,255,255,0.08));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pc, #ffffff) 55%, transparent), 0 8px 20px rgba(0,0,0,0.45);
+}
+.podium-winner-name { text-shadow: 0 0 22px rgba(255,215,0,0.55); animation: winnerGlow 2.2s ease-in-out infinite !important; }
+@keyframes winnerGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.18)} }
+.podium-bar { box-shadow: 0 -6px 24px rgba(0,0,0,0.30), inset 0 2px 0 rgba(255,255,255,0.35); }
+.podium-bar-score { color: rgba(0,0,0,0.6); text-shadow: 0 1px 0 rgba(255,255,255,0.3); }
+
+/* ── Richer confetti + streamers ── */
+.confetti-piece { box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+.confetti-piece.streamer { border-radius: 2px !important; opacity: 0.9; }
+@keyframes confettiFall {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translate(var(--drift, 0px), 114vh) rotate(680deg); opacity: 0; }
+}
+
+/* ── Win banner shimmer + pop (in-game victory moment) ── */
+.win-banner { position: relative; overflow: hidden; animation: bannerPop .5s cubic-bezier(.34,1.56,.64,1); }
+.win-banner::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 32%, rgba(255,255,255,0.55) 50%, transparent 68%);
+  transform: translateX(-120%); animation: bannerShimmer 2.6s ease-in-out .3s infinite;
+}
+@keyframes bannerShimmer { to { transform: translateX(120%); } }
+@keyframes bannerPop { from { transform: scale(.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Victory-screen ghost button always readable on the dark podium */
+.podium-actions .btn-ghost.podium-home-btn {
+  color: rgba(255,255,255,0.92) !important;
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  backdrop-filter: blur(6px);
+}
