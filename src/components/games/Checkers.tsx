@@ -166,11 +166,23 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
 
       {room.winner && <div className="win-banner">🎉 {room.winner} gagne !</div>}
 
-      {isMyTurn && !room.winner && capturing && (
-        <div className="chk-banner">
-          {chaining ? "🔗 Enchaîne la prise maximale !" : "⚠️ Prise obligatoire — capture le maximum"}
-        </div>
-      )}
+      {/* Fixed-height slot so the transient banner never reflows the board. */}
+      <div className="chk-status-slot">
+        <AnimatePresence>
+          {isMyTurn && !room.winner && capturing && (
+            <motion.div
+              key={chaining ? "chain" : "cap"}
+              className="chk-banner"
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              transition={{ duration: 0.2 }}
+            >
+              {chaining ? "🔗 Enchaîne la prise maximale !" : "⚠️ Prise obligatoire — capture le maximum"}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <div className="checkers-stage">
         <div className="checkers-squares">
@@ -239,13 +251,19 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
 }
 
 const CSS = `
+/* Reserved-height slot: the banner fades in/out INSIDE it, so the board
+   never shifts when a message appears — no forced scroll. */
+.chk-status-slot {
+  min-height: 2.9rem; display: flex; align-items: center; justify-content: center;
+  margin: .35rem 0; padding: 0 1rem;
+}
 .chk-banner {
   display: flex; align-items: center; justify-content: center; gap: .4rem;
-  margin: .5rem auto; max-width: 92vw; padding: .45rem .8rem;
+  margin: 0 auto; max-width: 92vw; padding: .45rem 1rem;
   border-radius: var(--radius); font-weight: 800; font-size: .9rem;
   background: color-mix(in srgb, var(--danger) 18%, var(--surface-1));
   color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow); white-space: nowrap;
 }
 .checkers-stage {
   position: relative; width: min(92vw, 400px); aspect-ratio: 1; margin: 1rem auto;
