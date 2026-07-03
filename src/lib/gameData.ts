@@ -1,4 +1,4 @@
-import type { Game, MemberPreset, GameId, Difficulty } from "../types";
+import type { Game, MemberPreset, GameId, Difficulty, StoredQuizQuestion } from "../types";
 
 /* ── Solo vs Ordinateur ── */
 export const AI_ID = "zzz-ai";
@@ -161,19 +161,125 @@ export const QUIZ_QUESTIONS = [
   { q: "Qui a écrit Harry Potter ?", opts: ["Tolkien","J.K. Rowling","Roald Dahl","C.S. Lewis"], a: 1, cat: "Culture 🎭" },
 ];
 
-export const DEFIS = [
-  { id:"tongue", text:"Dis 3 fois vite : 'Les chaussettes de l'archiduchesse'", type:"group", timer:10 },
-  { id:"count", text:"Comptez ensemble de 1 à 20, chacun dit un chiffre à tour de rôle", type:"group", timer:20 },
-  { id:"animal", text:"Imite un animal sans parler — les autres devinent", type:"solo", timer:15 },
-  { id:"hum", text:"Fredonne une chanson sans paroles — les autres devinent", type:"solo", timer:20 },
-  { id:"letters", text:"Chacun dit un mot commençant par la lettre B en moins de 3 secondes", type:"group", timer:30 },
-  { id:"describe", text:"Décris un objet de la pièce sans le nommer — les autres devinent", type:"solo", timer:20 },
-  { id:"handshake", text:"Inventez une poignée de main secrète à 2 en 30 secondes", type:"duo", timer:30 },
-  { id:"portrait", text:"Fais un portrait en 10 secondes avec tes doigts dans l'air", type:"solo", timer:10 },
-  { id:"song", text:"Chante les paroles d'une chanson à l'envers (commence par la fin)", type:"solo", timer:20 },
-  { id:"mirror", text:"Faites le miroir : imitez exactement les mouvements de l'autre", type:"duo", timer:20 },
-  { id:"whisper", text:"Passe le message : chuchote une phrase, elle doit arriver intacte", type:"group", timer:30 },
-  { id:"1min", text:"Sans regarder ta montre, lève la main quand tu penses qu'une minute s'est écoulée", type:"group", timer:60 },
+/* ── Grande banque de questions Quiz KHELIJ (français, familial) ──
+   Catégories avec emoji → illustrations visuelles dans le jeu.               */
+export const QUIZ_BANK: StoredQuizQuestion[] = [
+  // Géographie 🗺️
+  { question:"Quelle est la capitale de l'Italie ?", answer:"Rome", badAnswers:["Milan","Venise","Naples"], category:"Géographie 🗺️" },
+  { question:"Quelle est la capitale de l'Espagne ?", answer:"Madrid", badAnswers:["Barcelone","Séville","Valence"], category:"Géographie 🗺️" },
+  { question:"Quelle est la capitale du Japon ?", answer:"Tokyo", badAnswers:["Kyoto","Osaka","Séoul"], category:"Géographie 🗺️" },
+  { question:"Quel est le plus grand pays du monde ?", answer:"La Russie", badAnswers:["Le Canada","La Chine","Les États-Unis"], category:"Géographie 🗺️" },
+  { question:"Sur quel continent se trouve le désert du Sahara ?", answer:"L'Afrique", badAnswers:["L'Asie","L'Australie","L'Amérique"], category:"Géographie 🗺️" },
+  { question:"Quelle est la capitale de l'Allemagne ?", answer:"Berlin", badAnswers:["Munich","Francfort","Hambourg"], category:"Géographie 🗺️" },
+  { question:"Quel est le plus grand océan du monde ?", answer:"Le Pacifique", badAnswers:["L'Atlantique","L'Indien","L'Arctique"], category:"Géographie 🗺️" },
+  { question:"Quel pays a la forme d'une botte ?", answer:"L'Italie", badAnswers:["La Grèce","L'Espagne","La Croatie"], category:"Géographie 🗺️" },
+  { question:"Quelle est la capitale de la Belgique ?", answer:"Bruxelles", badAnswers:["Anvers","Liège","Gand"], category:"Géographie 🗺️" },
+  { question:"Quelle est la plus haute montagne du monde ?", answer:"L'Everest", badAnswers:["Le Mont Blanc","Le Kilimandjaro","Le K2"], category:"Géographie 🗺️" },
+  // Espace 🚀 / Sciences 🔭
+  { question:"Quelle est la planète la plus proche du Soleil ?", answer:"Mercure", badAnswers:["Vénus","Mars","La Terre"], category:"Espace 🚀" },
+  { question:"Quelle planète est surnommée « la planète rouge » ?", answer:"Mars", badAnswers:["Jupiter","Vénus","Saturne"], category:"Espace 🚀" },
+  { question:"Combien de planètes compte le système solaire ?", answer:"8", badAnswers:["7","9","10"], category:"Espace 🚀" },
+  { question:"Quelle est la plus grande planète du système solaire ?", answer:"Jupiter", badAnswers:["Saturne","La Terre","Neptune"], category:"Espace 🚀" },
+  { question:"Quelle étoile est la plus proche de la Terre ?", answer:"Le Soleil", badAnswers:["Sirius","L'étoile Polaire","Alpha du Centaure"], category:"Espace 🚀" },
+  { question:"Quel gaz respirons-nous pour vivre ?", answer:"L'oxygène", badAnswers:["L'azote","L'hydrogène","Le carbone"], category:"Sciences 🔭" },
+  { question:"Quelle est la formule chimique de l'eau ?", answer:"H₂O", badAnswers:["CO₂","O₂","H₂O₂"], category:"Sciences 🔭" },
+  { question:"Qu'est-ce qui va le plus vite ?", answer:"La lumière", badAnswers:["Le son","Le vent","Un avion"], category:"Sciences 🔭" },
+  // Histoire 📜
+  { question:"Qui fut le premier homme à marcher sur la Lune ?", answer:"Neil Armstrong", badAnswers:["Buzz Aldrin","Youri Gagarine","Thomas Pesquet"], category:"Histoire 📜" },
+  { question:"Qui a peint la Joconde ?", answer:"Léonard de Vinci", badAnswers:["Picasso","Michel-Ange","Van Gogh"], category:"Histoire 📜" },
+  { question:"En quelle année a eu lieu la Révolution française ?", answer:"1789", badAnswers:["1815","1492","1914"], category:"Histoire 📜" },
+  { question:"Qui était Napoléon Bonaparte ?", answer:"Un empereur", badAnswers:["Un roi","Un peintre","Un explorateur"], category:"Histoire 📜" },
+  { question:"Quel monument les pharaons ont-ils fait construire ?", answer:"Les pyramides", badAnswers:["Le Colisée","La Tour Eiffel","Le Parthénon"], category:"Histoire 📜" },
+  // Sport ⚽
+  { question:"Quel pays a gagné la Coupe du Monde de foot 2018 ?", answer:"La France", badAnswers:["La Croatie","Le Brésil","L'Allemagne"], category:"Sport ⚽" },
+  { question:"Combien de joueurs par équipe sur un terrain de foot ?", answer:"11", badAnswers:["9","10","12"], category:"Sport ⚽" },
+  { question:"Quel sport se joue avec un panier et un ballon orange ?", answer:"Le basket", badAnswers:["Le volley","Le hand","Le rugby"], category:"Sport ⚽" },
+  { question:"Tous les combien ont lieu les Jeux Olympiques d'été ?", answer:"4 ans", badAnswers:["2 ans","3 ans","5 ans"], category:"Sport ⚽" },
+  { question:"Quel sport pratique Rafael Nadal ?", answer:"Le tennis", badAnswers:["Le golf","Le football","La boxe"], category:"Sport ⚽" },
+  // Animaux 🐾 / Nature 🌿
+  { question:"Quel est l'animal terrestre le plus rapide ?", answer:"Le guépard", badAnswers:["Le lion","Le cheval","Le léopard"], category:"Animaux 🐾" },
+  { question:"Quel est le plus grand animal du monde ?", answer:"La baleine bleue", badAnswers:["L'éléphant","La girafe","Le requin"], category:"Animaux 🐾" },
+  { question:"Combien de pattes a une araignée ?", answer:"8", badAnswers:["6","4","10"], category:"Animaux 🐾" },
+  { question:"Quel insecte produit le miel ?", answer:"L'abeille", badAnswers:["La guêpe","La fourmi","Le papillon"], category:"Animaux 🐾" },
+  { question:"Quel animal est surnommé « le roi des animaux » ?", answer:"Le lion", badAnswers:["Le tigre","L'éléphant","L'aigle"], category:"Animaux 🐾" },
+  { question:"Quel est le plus grand oiseau du monde ?", answer:"L'autruche", badAnswers:["L'aigle","Le manchot","Le condor"], category:"Animaux 🐾" },
+  { question:"Combien de bosses a un dromadaire ?", answer:"1", badAnswers:["2","3","0"], category:"Animaux 🐾" },
+  { question:"Quel animal peut changer de couleur ?", answer:"Le caméléon", badAnswers:["La grenouille","Le serpent","Le lézard"], category:"Animaux 🐾" },
+  { question:"De quoi se nourrit principalement le panda ?", answer:"De bambou", badAnswers:["De poisson","De viande","D'herbe"], category:"Animaux 🐾" },
+  { question:"Combien de pattes a un insecte ?", answer:"6", badAnswers:["4","8","2"], category:"Nature 🌿" },
+  // Corps humain 🫀
+  { question:"Quel organe pompe le sang dans le corps ?", answer:"Le cœur", badAnswers:["Le foie","Les poumons","L'estomac"], category:"Corps humain 🫀" },
+  { question:"Combien de dents a un adulte ?", answer:"32", badAnswers:["28","30","24"], category:"Corps humain 🫀" },
+  { question:"Combien d'os compte le corps humain adulte ?", answer:"206", badAnswers:["150","300","100"], category:"Corps humain 🫀" },
+  // Maths 🔢
+  { question:"Combien font 7 × 8 ?", answer:"56", badAnswers:["48","54","64"], category:"Maths 🔢" },
+  { question:"Combien de côtés a un triangle ?", answer:"3", badAnswers:["4","5","6"], category:"Maths 🔢" },
+  { question:"Combien font 12 + 15 ?", answer:"27", badAnswers:["25","28","26"], category:"Maths 🔢" },
+  { question:"Combien de minutes dans une heure ?", answer:"60", badAnswers:["30","100","24"], category:"Maths 🔢" },
+  { question:"Combien de côtés a un hexagone ?", answer:"6", badAnswers:["5","7","8"], category:"Maths 🔢" },
+  // Art 🎨 / Musique 🎵 / Cinéma 🎬
+  { question:"Combien de cordes a une guitare classique ?", answer:"6", badAnswers:["4","5","8"], category:"Musique 🎵" },
+  { question:"Qui a écrit les romans Harry Potter ?", answer:"J.K. Rowling", badAnswers:["Tolkien","Roald Dahl","C.S. Lewis"], category:"Art 🎨" },
+  { question:"Quel instrument a des touches noires et blanches ?", answer:"Le piano", badAnswers:["Le violon","La flûte","La guitare"], category:"Musique 🎵" },
+  { question:"Quel personnage a un nez qui grandit quand il ment ?", answer:"Pinocchio", badAnswers:["Aladdin","Peter Pan","Bambi"], category:"Cinéma 🎬" },
+  { question:"Quelle couleur obtient-on en mélangeant le bleu et le jaune ?", answer:"Le vert", badAnswers:["L'orange","Le violet","Le marron"], category:"Art 🎨" },
+  { question:"Combien y a-t-il de notes de musique de base ?", answer:"7", badAnswers:["5","8","12"], category:"Musique 🎵" },
+  // France 🇫🇷 / Culture 🌍 / Facile 😄
+  { question:"Quel fleuve traverse Paris ?", answer:"La Seine", badAnswers:["La Loire","Le Rhône","La Garonne"], category:"France 🇫🇷" },
+  { question:"Quelle monnaie utilise-t-on en France ?", answer:"L'euro", badAnswers:["Le franc","Le dollar","La livre"], category:"France 🇫🇷" },
+  { question:"Quelles sont les couleurs du drapeau français ?", answer:"Bleu, blanc, rouge", badAnswers:["Rouge, blanc, vert","Bleu, blanc, jaune","Vert, blanc, rouge"], category:"France 🇫🇷" },
+  { question:"Quelle est la couleur du ciel par beau temps ?", answer:"Bleu", badAnswers:["Vert","Rouge","Violet"], category:"Facile 😄" },
+  { question:"Combien de jours compte une semaine ?", answer:"7", badAnswers:["5","6","8"], category:"Facile 😄" },
+  { question:"Combien de mois compte une année ?", answer:"12", badAnswers:["10","11","13"], category:"Facile 😄" },
+  { question:"Combien de doigts a-t-on à deux mains ?", answer:"10", badAnswers:["8","9","12"], category:"Facile 😄" },
+  { question:"Quel jour vient juste après mardi ?", answer:"Mercredi", badAnswers:["Lundi","Jeudi","Vendredi"], category:"Facile 😄" },
+  { question:"À quelle saison les feuilles tombent-elles ?", answer:"L'automne", badAnswers:["L'été","L'hiver","Le printemps"], category:"Facile 😄" },
+  { question:"Combien de saisons y a-t-il dans une année ?", answer:"4", badAnswers:["2","3","5"], category:"Facile 😄" },
+  { question:"Quel animal fait « meuh » ?", answer:"La vache", badAnswers:["Le mouton","Le cheval","La chèvre"], category:"Facile 😄" },
+  // Cuisine 🍳
+  { question:"Quel est l'ingrédient principal du pain ?", answer:"La farine", badAnswers:["Le riz","Le sucre","Le sel"], category:"Cuisine 🍳" },
+  { question:"Quel fromage est plein de trous ?", answer:"L'emmental", badAnswers:["Le camembert","Le brie","Le roquefort"], category:"Cuisine 🍳" },
+  { question:"Quel fruit est jaune et courbé ?", answer:"La banane", badAnswers:["La pomme","La poire","L'orange"], category:"Cuisine 🍳" },
+  { question:"Avec quel fruit fabrique-t-on le vin ?", answer:"Le raisin", badAnswers:["La pomme","Le blé","L'orge"], category:"Cuisine 🍳" },
+  { question:"Le chocolat est fabriqué à partir de quelles fèves ?", answer:"Les fèves de cacao", badAnswers:["Les fèves de café","Les fèves de soja","Les haricots"], category:"Cuisine 🍳" },
+];
+
+export interface DefiItem { id: string; emoji: string; text: string; type: "group" | "solo" | "duo"; timer: number; }
+export const DEFIS: DefiItem[] = [
+  { id:"tongue", emoji:"👅", text:"Dis 3 fois vite : « Les chaussettes de l'archiduchesse sont-elles sèches ? »", type:"solo", timer:15 },
+  { id:"count", emoji:"🔢", text:"Comptez ensemble de 1 à 30, chacun un chiffre à tour de rôle, sans se tromper", type:"group", timer:25 },
+  { id:"animal", emoji:"🐒", text:"Imite un animal sans parler — les autres devinent", type:"solo", timer:20 },
+  { id:"hum", emoji:"🎵", text:"Fredonne une chanson sans les paroles — les autres devinent", type:"solo", timer:25 },
+  { id:"letterB", emoji:"🅱️", text:"Chacun dit un mot commençant par B, sans répéter, à tour de rôle", type:"group", timer:30 },
+  { id:"describe", emoji:"🔍", text:"Décris un objet de la pièce sans le nommer — les autres devinent", type:"solo", timer:25 },
+  { id:"handshake", emoji:"🤝", text:"Inventez une poignée de main secrète à deux en 30 secondes", type:"duo", timer:30 },
+  { id:"portrait", emoji:"🖐️", text:"Dessine un portrait dans l'air avec ton doigt — les autres devinent qui", type:"solo", timer:20 },
+  { id:"backwards", emoji:"🔤", text:"Épelle ton prénom à l'envers", type:"solo", timer:15 },
+  { id:"mirror", emoji:"🪞", text:"Faites le miroir : imitez exactement les gestes de l'autre", type:"duo", timer:25 },
+  { id:"whisper", emoji:"🤫", text:"Passe le message : chuchote une phrase, elle doit arriver intacte", type:"group", timer:30 },
+  { id:"minute", emoji:"⏱️", text:"Sans regarder, lève la main quand tu penses qu'une minute s'est écoulée", type:"group", timer:60 },
+  { id:"nolaugh", emoji:"😐", text:"Regarde quelqu'un dans les yeux sans rire ni sourire", type:"duo", timer:20 },
+  { id:"balance", emoji:"🦩", text:"Tiens en équilibre sur un pied, les yeux fermés", type:"solo", timer:20 },
+  { id:"capitals", emoji:"🏙️", text:"Citez à tour de rôle une capitale de pays, sans répéter", type:"group", timer:40 },
+  { id:"robot", emoji:"🤖", text:"Parle comme un robot pendant tout ton tour", type:"solo", timer:20 },
+  { id:"freeze", emoji:"🧊", text:"Statue ! Restez totalement immobiles", type:"group", timer:20 },
+  { id:"compliment", emoji:"💗", text:"Fais un compliment sincère à chaque joueur", type:"solo", timer:30 },
+  { id:"fruits", emoji:"🍎", text:"Nommez à tour de rôle un fruit ou un légume, sans répéter", type:"group", timer:30 },
+  { id:"dance", emoji:"💃", text:"Invente un pas de danse et fais-le refaire aux autres", type:"solo", timer:25 },
+  { id:"accent", emoji:"🗣️", text:"Raconte ta journée avec un accent inventé", type:"solo", timer:25 },
+  { id:"clap", emoji:"👏", text:"Créez un rythme à taper dans les mains, tous ensemble", type:"group", timer:25 },
+  { id:"impression", emoji:"🎭", text:"Imite quelqu'un de la famille — les autres devinent qui", type:"solo", timer:20 },
+  { id:"story", emoji:"📖", text:"Inventez une histoire : chacun ajoute une phrase à tour de rôle", type:"group", timer:45 },
+  { id:"opposite", emoji:"↔️", text:"Réponds à 3 questions en disant toujours le contraire de la vérité", type:"duo", timer:25 },
+  { id:"jump", emoji:"🤸", text:"Fais 10 sauts en comptant à voix haute", type:"solo", timer:20 },
+  { id:"colors", emoji:"🌈", text:"Trouve 5 objets de la même couleur dans la pièce", type:"solo", timer:25 },
+  { id:"opera", emoji:"🎤", text:"Chante « Joyeux anniversaire » façon opéra", type:"solo", timer:20 },
+  { id:"emoji", emoji:"📱", text:"Mime un emoji de ton choix — les autres devinent lequel", type:"solo", timer:20 },
+  { id:"memory", emoji:"🧠", text:"Liste qui s'allonge : chacun ajoute un objet et redit toute la liste", type:"group", timer:45 },
+  { id:"slowmo", emoji:"🐢", text:"Marche au ralenti pendant tout ton tour", type:"solo", timer:20 },
+  { id:"rhyme", emoji:"📝", text:"Trouve 3 mots qui riment avec « chapeau »", type:"solo", timer:20 },
+  { id:"letter", emoji:"🙌", text:"En équipe, formez une lettre avec vos corps", type:"group", timer:30 },
+  { id:"wink", emoji:"😉", text:"Fais un clin d'œil à chaque joueur sans sourire", type:"solo", timer:15 },
 ];
 
 export function uid(): string {
@@ -185,7 +291,10 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "checkers") return { board: initCheckersBoard(), currentTurn: 0, selected: null, hints: [], chkChain: null };
   if (game === "chess") return { board: CHESS_INIT.map(r => [...r]), currentTurn: 0, selected: null, hints: [], chessCastle: "KQkq", chessEp: null, chessCheck: null };
   if (game === "quiz") return { questionIdx: 0, quizThemes: ["all"], quizAnswers: {}, quizQuestions: null, quizOptions: [], revealed: false, totalQuestions: 10 };
-  if (game === "defi") { const d = DEFIS[0]; return { defiIdx: 0, timerLeft: d.timer, timerRunning: false }; }
+  if (game === "defi") {
+    const deck = DEFIS.map((_, i) => i).sort(() => Math.random() - 0.5); // shuffle → no repeats in a game
+    return { defiIdx: 0, defiDeck: deck, timerLeft: DEFIS[deck[0]].timer, timerRunning: false };
+  }
   if (game === "justeprix") return { jpRound: 0, jpTotalRounds: 3, jpProduct: null, jpAnswers: {}, jpRevealed: false };
   if (game === "dessin") return { dessinManche: 0, dessinTotalManches: 0, dessinMot: null, dessinDessinateur: null, dessinPaths: [], dessinCorrectGuesser: null, dessinRoundActive: false, dessinGuessChat: [] };
   if (game === "scrabble") { const bag = buildBag(); return { bag, racks: {}, currentTurn: 0, roundWord: "", selectedTiles: [], wordHistory: [] }; }

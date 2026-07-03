@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { QUIZ_BANK } from "../../lib/gameData";
+import { categoryVisual } from "../../lib/categoryVisual";
 import type { Room, StoredQuizQuestion } from "../../types";
 
 /* ─── API types ─────────────────────────────────────────────── */
@@ -42,21 +44,8 @@ function getUsedTexts(): Set<string> {
   return s;
 }
 
-/* ─── Fallback questions ────────────────────────────────────── */
-const FALLBACK_QUESTIONS: StoredQuizQuestion[] = [
-  { question: "Quelle est la planète la plus proche du Soleil ?",         answer: "Mercure",     badAnswers: ["Vénus", "Mars", "Jupiter"],          category: "Sciences 🔭" },
-  { question: "Combien de côtés a un hexagone ?",                         answer: "6",           badAnswers: ["4", "5", "8"],                        category: "Maths 🔢" },
-  { question: "Quel est le plus grand pays du monde ?",                    answer: "Russie",      badAnswers: ["Canada", "États-Unis", "Chine"],       category: "Géographie 🗺️" },
-  { question: "Qui a inventé la théorie de la relativité ?",              answer: "Einstein",    badAnswers: ["Newton", "Bohr", "Galilée"],           category: "Sciences 🔭" },
-  { question: "Combien de joueurs dans une équipe de football ?",         answer: "11",          badAnswers: ["9", "10", "12"],                       category: "Sport ⚽" },
-  { question: "Quelle est la capitale de l'Australie ?",                  answer: "Canberra",    badAnswers: ["Sydney", "Melbourne", "Brisbane"],     category: "Géographie 🗺️" },
-  { question: "Quel animal est le plus rapide sur Terre ?",               answer: "Guépard",     badAnswers: ["Lion", "Autruche", "Faucon"],          category: "Nature 🌿" },
-  { question: "En quelle année a commencé la Première Guerre mondiale ?", answer: "1914",        badAnswers: ["1910", "1918", "1939"],                category: "Histoire 📜" },
-  { question: "Quelle est la formule chimique de l'eau ?",                answer: "H₂O",         badAnswers: ["CO₂", "O₂", "H₂O₂"],                 category: "Sciences 🔭" },
-  { question: "Qui a écrit Roméo et Juliette ?",                          answer: "Shakespeare", badAnswers: ["Molière", "Victor Hugo", "Dante"],     category: "Littérature 📚" },
-  { question: "De combien d'étoiles est composé le drapeau européen ?",   answer: "12",          badAnswers: ["15", "27", "6"],                       category: "Culture 🌍" },
-  { question: "Quel est le plus grand océan du monde ?",                  answer: "Pacifique",   badAnswers: ["Atlantique", "Indien", "Arctique"],    category: "Géographie 🗺️" },
-];
+/* ─── Fallback = the big curated French family bank ─────────── */
+const FALLBACK_QUESTIONS: StoredQuizQuestion[] = QUIZ_BANK;
 
 const TIMER_DURATION = 15;
 
@@ -154,6 +143,33 @@ const QUIZ_CSS = `
 /* Loading polish */
 .quiz-loading .quiz-spinner {
   box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Category illustration tied to each question's topic */
+.quiz-illus {
+  position: relative; height: 78px; margin: .2rem 0 .1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.quiz-illus-icon {
+  width: 66px; height: 66px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 2.15rem; z-index: 2;
+  background: radial-gradient(circle at 35% 28%,
+    color-mix(in srgb, var(--cat, var(--accent)) 34%, var(--surface-1)),
+    color-mix(in srgb, var(--cat, var(--accent)) 13%, var(--surface-1)));
+  border: 1px solid color-mix(in srgb, var(--cat, var(--accent)) 45%, var(--border));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--cat, var(--accent)) 40%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.45);
+}
+.quiz-float {
+  position: absolute; top: 42%; transform: translateY(-50%);
+  font-size: 1.15rem; opacity: .5; z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.18));
+}
+/* Tint the category chip with the topic hue */
+.quiz-cat {
+  background: color-mix(in srgb, var(--cat, var(--accent)) 15%, transparent) !important;
+  color: var(--cat, var(--accent)) !important;
+  border: 1px solid color-mix(in srgb, var(--cat, var(--accent)) 34%, transparent);
 }
 `;
 
@@ -342,6 +358,7 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   ══════════════════════════════════════════ */
   const ansDisabled = myAnswer !== undefined || revealed;
   const urgent = !revealed && myAnswer === undefined && timeLeft <= 5;
+  const vis = categoryVisual(currentQ.category);
 
   /* Animation target for each option once the answer is revealed */
   const revealAnim = (cls: string) => {
@@ -416,11 +433,33 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
         <motion.div
           key={qIdx}
           className="quiz-question-wrap"
+          style={{ ["--cat" as string]: vis.hue } as React.CSSProperties}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -24 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
+          <div className="quiz-illus">
+            {vis.floaters.map((f, i) => (
+              <motion.span
+                key={f + i}
+                className="quiz-float"
+                style={{ left: `${[7, 25, 71, 90][i] ?? 50}%` }}
+                animate={{ y: [0, -11, 0], opacity: [0.4, 0.8, 0.4], rotate: [0, i % 2 ? 8 : -8, 0] }}
+                transition={{ duration: 3 + i * 0.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
+              >
+                {f}
+              </motion.span>
+            ))}
+            <motion.div
+              className="quiz-illus-icon"
+              initial={{ scale: 0, rotate: -25 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 14, delay: 0.05 }}
+            >
+              {vis.icon}
+            </motion.div>
+          </div>
           <motion.div
             className="quiz-cat"
             initial={{ scale: 0, opacity: 0 }}

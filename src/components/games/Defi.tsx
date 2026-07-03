@@ -18,7 +18,9 @@ interface DefiProps {
 export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
   const players = Object.values(room.players || {});
   const defiIdx = room.defiIdx || 0;
-  const defi = DEFIS[defiIdx % DEFIS.length];
+  // Shuffled deck → no repeated challenges within a game.
+  const deck = room.defiDeck && room.defiDeck.length ? room.defiDeck : DEFIS.map((_, i) => i);
+  const defi = DEFIS[deck[defiIdx % deck.length]];
   const timerLeft = room.timerLeft !== undefined ? room.timerLeft : defi.timer;
   const running = room.timerRunning || false;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -60,7 +62,7 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
   const nextDefi = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     const next = defiIdx + 1;
-    const nextDefiItem = DEFIS[next % DEFIS.length];
+    const nextDefiItem = DEFIS[deck[next % deck.length]];
     if (next >= 10) {
       const scores = room.scores || {};
       const winner = players.sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))[0]?.name || "?";
@@ -110,6 +112,22 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
             transition={{ type: "spring", stiffness: 520, damping: 15, delay: 0.14 }}
           >
             {TYPE_ICONS[defi.type] || "⭐"} {TYPE_LABELS[defi.type] || defi.type}
+          </motion.div>
+
+          <motion.div
+            className="defi-illus"
+            key={`illus-${defiIdx}`}
+            initial={{ scale: 0, rotate: -22, y: 8 }}
+            animate={{ scale: 1, rotate: 0, y: 0 }}
+            transition={{ type: "spring", stiffness: 340, damping: 13, delay: 0.12 }}
+          >
+            <motion.span
+              className="defi-illus-emoji"
+              animate={{ y: [0, -7, 0] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            >
+              {defi.emoji}
+            </motion.span>
           </motion.div>
 
           <motion.div
@@ -246,4 +264,17 @@ const DEFI_CSS = `
   font-family: var(--font-d); font-size: 1.4rem; font-weight: 900;
   pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,.25); z-index: 3;
 }
+
+/* Big challenge illustration */
+.defi-illus {
+  width: 84px; height: 84px; margin: .3rem auto .1rem;
+  border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 36% 30%,
+    color-mix(in srgb, var(--primary) 26%, var(--surface-1)),
+    color-mix(in srgb, var(--accent) 16%, var(--surface-1)));
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 34%, transparent),
+    inset 0 1px 0 rgba(255,255,255,.45);
+}
+.defi-illus-emoji { font-size: 2.7rem; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,.2)); }
 `;

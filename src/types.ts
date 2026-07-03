@@ -101,6 +101,7 @@ export interface Room {
   totalQuestions?: number;
   // Defi
   defiIdx?: number;
+  defiDeck?: number[];
   timerLeft?: number;
   timerRunning?: boolean;
   // Le Juste Prix
