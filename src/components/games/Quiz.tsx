@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import type { Room, StoredQuizQuestion } from "../../types";
 
@@ -59,9 +60,102 @@ const FALLBACK_QUESTIONS: StoredQuizQuestion[] = [
 
 const TIMER_DURATION = 15;
 
+/* Circular timer-ring geometry (r = 11) */
+const RING_R = 11;
+const RING_C = 2 * Math.PI * RING_R;
+
 function shuffleArr<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
+
+/* ─── Scoped premium styles (visual only) ───────────────────── */
+const QUIZ_CSS = `
+.quiz-question-wrap { will-change: transform, opacity; }
+
+/* Progress bar glow */
+.quiz-prog-bar {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* Timer bar + circular ring */
+.quiz-timer-bar {
+  height: 34px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
+  border-bottom: 1px solid var(--border);
+}
+.quiz-timer-fill {
+  height: 100%;
+  opacity: .3;
+  border-radius: 0;
+  box-shadow: none;
+}
+.quiz-timer-ring {
+  position: absolute;
+  right: .55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+}
+.quiz-timer-ring svg { position: absolute; inset: 0; }
+.qtr-track { fill: none; stroke: color-mix(in srgb, var(--text) 14%, transparent); stroke-width: 3; }
+.qtr-prog  { fill: none; stroke-width: 3; }
+.quiz-timer-ring .quiz-timer-num {
+  position: static;
+  right: auto;
+  font-size: .66rem;
+  line-height: 1;
+}
+
+/* Option buttons: flex layout + result marks */
+.quiz-opt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  position: relative;
+  will-change: transform;
+}
+.qopt-text { flex: 1 1 auto; text-align: left; }
+.qopt-mark {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: .8rem;
+  font-weight: 900;
+  color: #fff;
+}
+.qopt-mark.ok  { background: var(--green); }
+.qopt-mark.bad { background: var(--danger); }
+
+/* Reveal states get a premium glow */
+.quiz-opt-btn.correct {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 18%, var(--surface-1));
+  color: var(--text);
+  box-shadow: 0 6px 22px color-mix(in srgb, var(--green) 32%, transparent);
+}
+.quiz-opt-btn.wrong {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 15%, var(--surface-1));
+  color: var(--text);
+}
+.quiz-opt-btn.chosen {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-1));
+}
+
+/* Loading polish */
+.quiz-loading .quiz-spinner {
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+`;
 
 /* ─── Component ─────────────────────────────────────────────── */
 interface QuizProps {
@@ -214,15 +308,31 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   if (isLoadingQ || !currentQ) {
     return (
       <div className="screen game-screen quiz-screen">
+        <style>{QUIZ_CSS}</style>
         <div className="game-topbar">
           <button className="btn-back" onClick={onLeave}>✕</button>
           <div className="turn-indicator">🧠 Quiz KHELIJ</div>
           <div />
         </div>
-        <div className="quiz-loading">
-          <div className="quiz-spinner" />
-          <div>{isHost ? "Chargement des questions…" : "En attente des questions…"}</div>
-        </div>
+        <motion.div
+          className="quiz-loading"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          <motion.div
+            className="quiz-spinner"
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 18 }}
+          />
+          <motion.div
+            animate={{ opacity: [0.55, 1, 0.55] }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            {isHost ? "Chargement des questions…" : "En attente des questions…"}
+          </motion.div>
+        </motion.div>
       </div>
     );
   }
@@ -230,8 +340,20 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   /* ══════════════════════════════════════════
      ACTIVE QUIZ
   ══════════════════════════════════════════ */
+  const ansDisabled = myAnswer !== undefined || revealed;
+  const urgent = !revealed && myAnswer === undefined && timeLeft <= 5;
+
+  /* Animation target for each option once the answer is revealed */
+  const revealAnim = (cls: string) => {
+    if (!revealed) return { opacity: 1, scale: 1, x: 0, y: 0 };
+    if (cls === "correct") return { opacity: 1, scale: [1, 1.05, 1], x: 0, y: 0 };
+    if (cls === "wrong") return { opacity: 1, scale: 1, x: [0, -8, 8, -6, 6, -3, 0], y: 0 };
+    return { opacity: 0.42, scale: 0.98, x: 0, y: 0 };
+  };
+
   return (
     <div className="screen game-screen quiz-screen">
+      <style>{QUIZ_CSS}</style>
       <div className="game-topbar">
         <button className="btn-back" onClick={onLeave}>✕</button>
         <div className="turn-indicator">
@@ -247,61 +369,189 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
       </div>
 
       <div className="quiz-progress">
-        <div className="quiz-prog-bar" style={{ width: `${pct}%` }} />
+        <motion.div
+          className="quiz-prog-bar"
+          initial={false}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        />
       </div>
 
       <div className="quiz-timer-bar">
-        <div className="quiz-timer-fill" style={{ width: `${timerPct}%`, background: timerColor }} />
-        <span className="quiz-timer-num" style={{ color: timerColor }}>{timeLeft}s</span>
+        <motion.div
+          className="quiz-timer-fill"
+          initial={false}
+          animate={{ width: `${timerPct}%`, background: timerColor }}
+          transition={{ width: { duration: 1, ease: "linear" }, background: { duration: 0.4 } }}
+        />
+        <div className="quiz-timer-ring">
+          <svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true">
+            <circle className="qtr-track" cx="13" cy="13" r={RING_R} />
+            <motion.circle
+              className="qtr-prog"
+              cx="13"
+              cy="13"
+              r={RING_R}
+              transform="rotate(-90 13 13)"
+              strokeLinecap="round"
+              strokeDasharray={RING_C}
+              style={{ stroke: timerColor }}
+              initial={false}
+              animate={{ strokeDashoffset: RING_C * (1 - timeLeft / TIMER_DURATION) }}
+              transition={{ duration: 1, ease: "linear" }}
+            />
+          </svg>
+          <motion.span
+            className="quiz-timer-num"
+            style={{ color: timerColor }}
+            animate={urgent ? { scale: [1, 1.18, 1] } : { scale: 1 }}
+            transition={urgent ? { duration: 0.7, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+          >
+            {timeLeft}
+          </motion.span>
+        </div>
       </div>
 
-      <div className="quiz-question-wrap">
-        <div className="quiz-cat">{currentQ.category}</div>
-        <div className="quiz-question">{currentQ.question}</div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={qIdx}
+          className="quiz-question-wrap"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -24 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <motion.div
+            className="quiz-cat"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 420, damping: 16, delay: 0.08 }}
+          >
+            {currentQ.category}
+          </motion.div>
+          <motion.div
+            className="quiz-question"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14, duration: 0.35, ease: "easeOut" }}
+          >
+            {currentQ.question}
+          </motion.div>
 
-        <div className="quiz-options">
-          {shuffledOpts.map((opt, i) => (
-            <button
-              key={i}
-              className={`quiz-opt-btn ${getOptClass(opt)}`}
-              onClick={() => handleAnswer(opt)}
-              disabled={myAnswer !== undefined || revealed}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-
-        {revealed ? (
-          <div className="quiz-reveal-zone">
-            <div className="quiz-reveal-title">
-              ✅ Bonne réponse : <strong>{currentQ.answer}</strong>
-            </div>
-            {players.map(p => {
-              const ans = quizAnswers[p.id];
-              const ok = ans === currentQ.answer;
-              const noAns = ans === "" || ans === undefined;
+          <div className="quiz-options">
+            {shuffledOpts.map((opt, i) => {
+              const cls = getOptClass(opt);
               return (
-                <div key={p.id} className="quiz-player-ans" style={{ color: p.color || "#333" }}>
-                  {p.name} : {noAns ? "⏰ Temps écoulé" : ans}{" "}
-                  {ok ? "✅" : noAns ? "😅" : "❌"}
-                </div>
+                <motion.button
+                  key={i}
+                  className={`quiz-opt-btn ${cls}`}
+                  onClick={() => handleAnswer(opt)}
+                  disabled={ansDisabled}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={revealAnim(cls)}
+                  transition={
+                    revealed
+                      ? { duration: 0.45, ease: "easeOut" }
+                      : { delay: 0.18 + i * 0.06, type: "spring", stiffness: 280, damping: 20 }
+                  }
+                  whileHover={ansDisabled ? undefined : { scale: 1.02, y: -2 }}
+                  whileTap={ansDisabled ? undefined : { scale: 0.97 }}
+                >
+                  <span className="qopt-text">{opt}</span>
+                  <AnimatePresence>
+                    {revealed && cls === "correct" && (
+                      <motion.span
+                        key="ok"
+                        className="qopt-mark ok"
+                        initial={{ scale: 0, rotate: -40 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0 }}
+                        transition={{ type: "spring", stiffness: 520, damping: 14, delay: 0.15 }}
+                      >
+                        ✓
+                      </motion.span>
+                    )}
+                    {revealed && cls === "wrong" && (
+                      <motion.span
+                        key="bad"
+                        className="qopt-mark bad"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        transition={{ type: "spring", stiffness: 520, damping: 14 }}
+                      >
+                        ✗
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
               );
             })}
-            {isHost || isSolo ? (
-              <button className="btn btn-primary" style={{ marginTop: ".8rem" }} onClick={next}>
-                {qIdx + 1 >= total ? "🏆 Voir les résultats" : "Question suivante →"}
-              </button>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {revealed ? (
+              <motion.div
+                key="reveal"
+                className="quiz-reveal-zone"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <div className="quiz-reveal-title">
+                  ✅ Bonne réponse : <strong>{currentQ.answer}</strong>
+                </div>
+                {players.map((p, pi) => {
+                  const ans = quizAnswers[p.id];
+                  const ok = ans === currentQ.answer;
+                  const noAns = ans === "" || ans === undefined;
+                  return (
+                    <motion.div
+                      key={p.id}
+                      className="quiz-player-ans"
+                      style={{ color: p.color || "#333" }}
+                      initial={{ opacity: 0, x: -14 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.12 + pi * 0.07, duration: 0.3 }}
+                    >
+                      {p.name} : {noAns ? "⏰ Temps écoulé" : ans}{" "}
+                      {ok ? "✅" : noAns ? "😅" : "❌"}
+                    </motion.div>
+                  );
+                })}
+                {isHost || isSolo ? (
+                  <motion.button
+                    className="btn btn-primary"
+                    style={{ marginTop: ".8rem" }}
+                    onClick={next}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.12 + players.length * 0.07 + 0.05, duration: 0.3 }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    {qIdx + 1 >= total ? "🏆 Voir les résultats" : "Question suivante →"}
+                  </motion.button>
+                ) : (
+                  <div className="waiting-host">⏳ En attente de l'hôte…</div>
+                )}
+              </motion.div>
             ) : (
-              <div className="waiting-host">⏳ En attente de l'hôte…</div>
+              <motion.div
+                key="waiting"
+                className="quiz-waiting"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                {isSolo ? "Choisis ta réponse !" : `${Object.keys(quizAnswers).length}/${players.length} ont répondu`}
+              </motion.div>
             )}
-          </div>
-        ) : (
-          <div className="quiz-waiting">
-            {isSolo ? "Choisis ta réponse !" : `${Object.keys(quizAnswers).length}/${players.length} ont répondu`}
-          </div>
-        )}
-      </div>
+          </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

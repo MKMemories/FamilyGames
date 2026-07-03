@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import type { Room } from "../../types";
 import { useSoloAI } from "../../hooks/useSoloAI";
@@ -104,6 +106,27 @@ function sunkShipAt(grid: number[][], shots: ShotMap, r0: number, c0: number): C
     stack.push([r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]);
   }
   return cells.every(([r, c]) => shots[key(r, c)] === "hit") ? cells : null;
+}
+
+/** Purely-visual hull styling: rounded ends + segment class for a ship cell,
+ *  derived from whether adjacent cells are also part of a ship. No logic. */
+function hullClass(isShip: (r: number, c: number) => boolean, r: number, c: number): string {
+  if (!isShip(r, c)) return "";
+  const up = isShip(r - 1, c), down = isShip(r + 1, c);
+  const left = isShip(r, c - 1), right = isShip(r, c + 1);
+  const cls = ["bn-ship"];
+  if (left || right) {
+    if (!left && right) cls.push("bn-hull-cap-l");
+    else if (left && !right) cls.push("bn-hull-cap-r");
+    else cls.push("bn-hull-mid-h");
+  } else if (up || down) {
+    if (!up && down) cls.push("bn-hull-cap-t");
+    else if (up && !down) cls.push("bn-hull-cap-b");
+    else cls.push("bn-hull-mid-v");
+  } else {
+    cls.push("bn-hull-solo");
+  }
+  return cls.join(" ");
 }
 
 interface BatailleNavaleProps {
@@ -219,6 +242,22 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
   const oppShots: ShotMap = (opponentId && shots[opponentId]) || {};
   const isMyTurn = phase === "battle" && turn === playerId && !winner;
 
+  // Purely-visual: which of MY landed hits belong to a now-sunk enemy ship,
+  // so those cells can flash. Only ever inspects cells I've already hit.
+  const sunkFireCells = useMemo(() => {
+    const set = new Set<string>();
+    const g = opponentId ? grids[opponentId] : undefined;
+    if (!g) return set;
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++) {
+        if (myShots[key(r, c)] !== "hit" || set.has(key(r, c))) continue;
+        const ship = sunkShipAt(g, myShots, r, c);
+        if (ship) ship.forEach(([sr, sc]) => set.add(key(sr, sc)));
+      }
+    return set;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opponentId, grids, JSON.stringify(myShots)]);
+
   const fire = (r: number, c: number) => {
     if (phase !== "battle" || winner) return;
     if (turn !== playerId) { onToast("Ce n'est pas ton tour"); return; }
@@ -293,6 +332,22 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
   };
 
   // ── Derived counts / labels ───────────────────────────────────────────
+  // Purely-visual: cells of MY fleet that belong to a fully-sunk ship, so the
+  // wreck can flash. Reads only my own grid + the shots already taken at me.
+  const sunkOwnCells = useMemo(() => {
+    const set = new Set<string>();
+    const g = grids[playerId];
+    if (!g) return set;
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++) {
+        if (g[r][c] !== 1 || oppShots[key(r, c)] !== "hit" || set.has(key(r, c))) continue;
+        const ship = sunkShipAt(g, oppShots, r, c);
+        if (ship) ship.forEach(([sr, sc]) => set.add(key(sr, sc)));
+      }
+    return set;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grids, playerId, JSON.stringify(oppShots)]);
+
   const myHitsTaken = Object.values(oppShots).filter((v) => v === "hit").length; // hits on MY fleet
   const myHitsDealt = Object.values(myShots).filter((v) => v === "hit").length; // hits I landed
   const iWon = winner === playerId;
@@ -353,7 +408,8 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
                 onGridLeave: () => setHover(null),
                 cellClass: (r, c) => {
                   const cls: string[] = [];
-                  if (occupiedSet.has(key(r, c))) cls.push("bn-ship");
+                  const hull = hullClass((rr, cc) => occupiedSet.has(key(rr, cc)), r, c);
+                  if (hull) cls.push(hull);
                   if (preview && preview.cells.some(([pr, pc]) => pr === r && pc === c))
                     cls.push(preview.ok ? "bn-prev-ok" : "bn-prev-bad");
                   return cls.join(" ");
@@ -385,7 +441,7 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
               <p>Flotte verrouillée. En attente de l'adversaire…</p>
               {renderGrid({
                 variant: "own-static",
-                cellClass: (r, c) => (grids[playerId]?.[r]?.[c] === 1 ? "bn-ship" : ""),
+                cellClass: (r, c) => hullClass((rr, cc) => grids[playerId]?.[rr]?.[cc] === 1, r, c),
               })}
             </div>
           )}
@@ -405,20 +461,35 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
               </div>
 
               <div className="bn-fire-label">Grille adverse {isMyTurn ? "— tire !" : ""}</div>
-              {aiFireActive && <div className="ai-thinking">🤖 vise…</div>}
+              <AnimatePresence>
+                {aiFireActive && (
+                  <motion.div
+                    className="ai-thinking bn-ai-thinking"
+                    initial={{ opacity: 0, y: -6, scale: .9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: .9 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                  >
+                    <span className="bn-ai-scope">🤖</span> vise
+                    <span className="bn-ai-dots"><i /><i /><i /></span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {renderGrid({
                 variant: "fire",
                 onCellClick: (r, c) => isMyTurn && fire(r, c),
                 interactive: isMyTurn,
                 cellClass: (r, c) => {
                   const s = myShots[key(r, c)];
-                  if (s === "hit") return "bn-hit";
+                  if (s === "hit") return sunkFireCells.has(key(r, c)) ? "bn-hit bn-sunk" : "bn-hit";
                   if (s === "miss") return "bn-miss";
                   return isMyTurn ? "bn-shootable" : "";
                 },
-                cellContent: (r, c) => {
+                cellMarker: (r, c) => {
                   const s = myShots[key(r, c)];
-                  return s === "hit" ? "🔥" : s === "miss" ? "○" : "";
+                  if (s === "hit") return <HitMarker sunk={sunkFireCells.has(key(r, c))} />;
+                  if (s === "miss") return <MissMarker />;
+                  return null;
                 },
               })}
 
@@ -427,19 +498,21 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
                 {renderGrid({
                   variant: "own",
                   cellClass: (r, c) => {
-                    const ship = grids[playerId]?.[r]?.[c] === 1;
+                    const isShip = (rr: number, cc: number) => grids[playerId]?.[rr]?.[cc] === 1;
+                    const ship = isShip(r, c);
                     const s = oppShots[key(r, c)];
-                    if (ship && s === "hit") return "bn-own-hit";
-                    if (ship) return "bn-ship";
+                    if (ship && s === "hit")
+                      return `${hullClass(isShip, r, c)} bn-own-hit${sunkOwnCells.has(key(r, c)) ? " bn-sunk" : ""}`;
+                    if (ship) return hullClass(isShip, r, c);
                     if (s === "miss") return "bn-own-splash";
                     return "";
                   },
-                  cellContent: (r, c) => {
-                    const s = oppShots[key(r, c)];
+                  cellMarker: (r, c) => {
                     const ship = grids[playerId]?.[r]?.[c] === 1;
-                    if (ship && s === "hit") return "✸";
-                    if (s === "miss") return "·";
-                    return "";
+                    const s = oppShots[key(r, c)];
+                    if (ship && s === "hit") return <HitMarker small sunk={sunkOwnCells.has(key(r, c))} />;
+                    if (s === "miss") return <MissMarker small />;
+                    return null;
                   },
                 })}
               </div>
@@ -472,11 +545,67 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
   );
 }
 
+/* ── Explosion / splash effects (framer-motion, purely visual) ───────── */
+function HitMarker({ sunk, small }: { sunk?: boolean; small?: boolean }) {
+  return (
+    <motion.div
+      className={`bn-fx bn-fx-hit ${small ? "sm" : ""} ${sunk ? "sunk" : ""}`}
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* expanding shockwave ring */}
+      <motion.span
+        className="bn-ring bn-ring-hit"
+        initial={{ scale: 0.2, opacity: 0.9 }}
+        animate={{ scale: 2.3, opacity: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      />
+      {/* burst core: pops, shakes, settles into a burning marker */}
+      <motion.span
+        className="bn-fx-core"
+        initial={{ scale: 0, rotate: -35 }}
+        animate={{ scale: [0, 1.4, 1], rotate: [-35, 12, 0], x: [0, -2, 2, -1, 0] }}
+        transition={{ duration: 0.55, ease: "easeOut" }}
+      >
+        {sunk ? "☠️" : "🔥"}
+      </motion.span>
+    </motion.div>
+  );
+}
+
+function MissMarker({ small }: { small?: boolean }) {
+  return (
+    <div className={`bn-fx bn-fx-miss ${small ? "sm" : ""}`}>
+      {/* two concentric splash ripples */}
+      <motion.span
+        className="bn-ring bn-ring-splash"
+        initial={{ scale: 0.15, opacity: 0.75 }}
+        animate={{ scale: 2, opacity: 0 }}
+        transition={{ duration: 0.75, ease: "easeOut" }}
+      />
+      <motion.span
+        className="bn-ring bn-ring-splash"
+        initial={{ scale: 0.15, opacity: 0.5 }}
+        animate={{ scale: 1.4, opacity: 0 }}
+        transition={{ duration: 0.75, delay: 0.1, ease: "easeOut" }}
+      />
+      {/* settled miss dot */}
+      <motion.span
+        className="bn-miss-dot"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.28, type: "spring", stiffness: 340, damping: 18 }}
+      />
+    </div>
+  );
+}
+
 /* ── Grid renderer (labels A–J / 1–10 + 10×10 cells) ─────────────────── */
 function renderGrid(opts: {
   variant: "place" | "fire" | "own" | "own-static";
   cellClass: (r: number, c: number) => string;
-  cellContent?: (r: number, c: number) => string;
+  cellMarker?: (r: number, c: number) => ReactNode;
   onCellClick?: (r: number, c: number) => void;
   onCellEnter?: (r: number, c: number) => void;
   onGridLeave?: () => void;
@@ -489,6 +618,8 @@ function renderGrid(opts: {
       onMouseLeave={opts.onGridLeave}
     >
       <div className={`bn-grid ${opts.interactive ? "live" : ""}`}>
+        {/* animated deep-sea shimmer overlay (single element, all cells) */}
+        <span className="bn-water-fx" aria-hidden="true" />
         <div className="bn-corner" />
         {LETTERS.map((l) => (
           <div key={`c${l}`} className="bn-lbl">{l}</div>
@@ -503,7 +634,7 @@ function renderGrid(opts: {
                 onClick={opts.onCellClick ? () => opts.onCellClick!(r, c) : undefined}
                 onMouseEnter={opts.onCellEnter ? () => opts.onCellEnter!(r, c) : undefined}
               >
-                {opts.cellContent ? opts.cellContent(r, c) : ""}
+                {opts.cellMarker ? opts.cellMarker(r, c) : null}
               </div>
             ))}
           </div>
@@ -517,7 +648,6 @@ function renderGrid(opts: {
    STYLES (scoped, prefixed bn-, theme-var driven with safe fallbacks)
    ════════════════════════════════════════════════════════════════════════ */
 const BN_CSS = `
-.bn-screen{ --bn-water: color-mix(in srgb, var(--accent, #7c5cbf) 14%, var(--surface-1, var(--card, #fff))); }
 .bn-turn{ font-weight:800; font-size:.85rem; }
 .bn-phasetag{ font-size:.7rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--muted,#9b8aaa); }
 
@@ -533,35 +663,106 @@ const BN_CSS = `
 .bn-place-info b{ color:var(--accent,#7c5cbf); }
 .bn-dim{ color:var(--muted,#9b8aaa); font-size:.8rem; }
 
-/* Grid ---------------------------------------------------------------- */
+/* ── Grid = framed sonar chart over deep sea ──────────────────────────── */
 .bn-grid-wrap{ width:100%; max-width:min(94vw, 440px); }
 .bn-grid-wrap.compact{ max-width:min(66vw, 260px); }
-.bn-grid{ display:grid; grid-template-columns:1.35em repeat(${SIZE}, 1fr); gap:2px;
-  background:var(--border, rgba(200,180,220,.3)); padding:2px; border-radius:.7rem;
-  box-shadow:var(--shadow, 0 8px 32px rgba(122,80,160,.12)); user-select:none; }
+.bn-grid{ position:relative; display:grid; grid-template-columns:1.35em repeat(${SIZE}, 1fr); gap:2px;
+  background:linear-gradient(180deg, #0d4568, #0a3350); padding:6px 6px 6px 2px; border-radius:.7rem;
+  box-shadow:var(--shadow, 0 8px 32px rgba(122,80,160,.12)), inset 0 0 0 1px rgba(120,200,255,.18),
+    inset 0 0 22px rgba(4,20,34,.6); user-select:none; overflow:hidden; }
 .bn-row-contents{ display:contents; }
 .bn-corner{ background:transparent; }
-.bn-lbl{ display:flex; align-items:center; justify-content:center; font-size:.6rem; font-weight:900;
-  color:var(--muted,#9b8aaa); aspect-ratio:auto; }
+.bn-lbl{ position:relative; z-index:2; display:flex; align-items:center; justify-content:center; font-size:.6rem; font-weight:900;
+  color:rgba(190,225,250,.85); text-shadow:0 1px 2px rgba(0,0,0,.5); aspect-ratio:auto; }
 .bn-grid-wrap.compact .bn-lbl{ font-size:.5rem; }
 
-.bn-cell{ aspect-ratio:1; border-radius:.18rem; background:var(--bn-water);
-  display:flex; align-items:center; justify-content:center; font-size:min(4.2vw,1rem); line-height:1;
-  transition:background .18s ease, transform .12s ease; }
+/* animated water shimmer (one element, sits behind the cells) */
+.bn-water-fx{ position:absolute; inset:2px; z-index:0; pointer-events:none; border-radius:.55rem;
+  background:
+    linear-gradient(115deg, transparent 22%, rgba(150,225,255,.16) 42%, rgba(205,240,255,.24) 50%, rgba(150,225,255,.16) 58%, transparent 78%),
+    radial-gradient(140% 120% at 26% 12%, #13597f 0%, #0b3c5c 52%, #062639 100%);
+  background-size:320% 320%, 100% 100%;
+  animation:bnWater 9s ease-in-out infinite; }
+@keyframes bnWater{ 0%{ background-position:0% 50%, 0 0; } 50%{ background-position:100% 50%, 0 0; } 100%{ background-position:0% 50%, 0 0; } }
+@media (prefers-reduced-motion: reduce){ .bn-water-fx{ animation:none; } }
+
+.bn-cell{ position:relative; z-index:1; aspect-ratio:1; border-radius:.16rem; overflow:hidden;
+  background:linear-gradient(160deg, rgba(22,74,106,.55), rgba(8,45,70,.62));
+  box-shadow:inset 0 0 0 1px rgba(120,190,235,.10);
+  display:flex; align-items:center; justify-content:center; line-height:1;
+  transition:box-shadow .18s ease, transform .12s ease; }
+
+/* firing hover: sonar targeting reticle */
 .bn-grid.live .bn-shootable{ cursor:crosshair; }
-.bn-grid.live .bn-shootable:hover{ background:color-mix(in srgb, var(--accent,#7c5cbf) 30%, var(--card,#fff)); transform:scale(1.05); }
+.bn-grid.live .bn-shootable:hover{ transform:scale(1.06);
+  box-shadow:inset 0 0 0 2px rgba(120,230,180,.9), 0 0 12px rgba(60,220,150,.55); }
+.bn-grid.live .bn-shootable:hover::after{ content:""; position:absolute; width:52%; height:52%; border-radius:50%;
+  border:1.5px solid rgba(150,255,205,.9); box-shadow:0 0 6px rgba(80,230,160,.7); }
 
-.bn-ship{ background:linear-gradient(135deg, var(--accent,#7c5cbf), var(--accent2,#a07ddf)); box-shadow:inset 0 0 0 1px rgba(255,255,255,.15); }
-.bn-prev-ok{ background:color-mix(in srgb, var(--green,#4caf50) 55%, var(--card,#fff)) !important; }
-.bn-prev-bad{ background:color-mix(in srgb, var(--danger,#e5484d) 50%, var(--card,#fff)) !important; }
+/* ── Ships: metallic riveted hull with rounded caps ──────────────────── */
+.bn-ship{ z-index:1; border-radius:2px;
+  background:
+    radial-gradient(circle at 50% 26%, rgba(255,255,255,.4) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 50% 74%, rgba(0,0,0,.32) 0 1px, transparent 1.6px),
+    linear-gradient(150deg, #aeb6c4 0%, #7e8695 34%, #545c69 52%, #6d7683 70%, #9aa2b0 100%);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.35), inset 0 -2px 3px rgba(0,0,0,.4),
+    inset 0 0 0 1px rgba(255,255,255,.12); }
+.bn-hull-cap-l{ border-top-left-radius:46%; border-bottom-left-radius:46%; }
+.bn-hull-cap-r{ border-top-right-radius:46%; border-bottom-right-radius:46%; }
+.bn-hull-cap-t{ border-top-left-radius:46%; border-top-right-radius:46%; }
+.bn-hull-cap-b{ border-bottom-left-radius:46%; border-bottom-right-radius:46%; }
+.bn-hull-solo{ border-radius:48%; }
+.bn-hull-mid-h, .bn-hull-mid-v{ border-radius:1px; }
 
-.bn-hit{ background:radial-gradient(circle, color-mix(in srgb, var(--danger,#e5484d) 90%, #000) , var(--danger,#e5484d));
-  color:#fff; animation:bnPop .3s ease; }
-.bn-miss{ background:var(--surface-3, rgba(120,120,140,.22)); color:var(--muted,#9b8aaa); animation:bnPop .3s ease; }
-.bn-own-hit{ background:var(--danger,#e5484d); color:#fff; animation:bnPop .3s ease; }
-.bn-own-splash{ background:var(--surface-3, rgba(120,120,140,.2)); color:var(--muted,#9b8aaa); }
+/* placement preview glow */
+.bn-prev-ok{ box-shadow:inset 0 0 0 2px rgba(90,230,150,.95), 0 0 12px rgba(50,220,130,.6) !important; }
+.bn-prev-ok:not(.bn-ship){ background:linear-gradient(160deg, rgba(50,190,120,.55), rgba(30,150,95,.6)) !important; }
+.bn-prev-bad{ box-shadow:inset 0 0 0 2px rgba(255,110,120,.95), 0 0 12px rgba(240,60,80,.6) !important; }
+.bn-prev-bad:not(.bn-ship){ background:linear-gradient(160deg, rgba(230,70,85,.55), rgba(180,40,55,.6)) !important; }
+
+/* ── Hit / miss cell surfaces ────────────────────────────────────────── */
+.bn-hit{ background:radial-gradient(circle at 50% 45%, #ffcf6b 0%, #ff7a1a 32%, #b02a0a 70%, #4f1305 100%) !important;
+  box-shadow:inset 0 0 8px rgba(0,0,0,.55), 0 0 12px rgba(255,110,30,.55) !important; }
+.bn-miss{ background:radial-gradient(circle at 50% 45%, #2f7ba3, #0c3552 75%) !important;
+  box-shadow:inset 0 0 8px rgba(2,16,28,.6) !important; }
+.bn-own-hit{ background:radial-gradient(circle at 50% 40%, #ff9a3c, #c23412 60%, #611705 100%) !important;
+  box-shadow:inset 0 0 8px rgba(0,0,0,.5), 0 0 10px rgba(255,120,40,.5) !important; }
+.bn-own-splash{ background:radial-gradient(circle at 50% 45%, #2f7ba3, #0c3552 75%) !important; }
+
+/* sunk ship: rhythmic flash */
+.bn-sunk{ animation:bnSunk 1s ease-in-out infinite; }
+@keyframes bnSunk{ 0%,100%{ box-shadow:inset 0 0 8px rgba(0,0,0,.55), 0 0 6px rgba(255,90,60,.4); }
+  50%{ box-shadow:inset 0 0 10px rgba(0,0,0,.6), 0 0 18px rgba(255,180,60,.95); } }
+@media (prefers-reduced-motion: reduce){ .bn-sunk{ animation:none; } }
+
+/* ── framer-motion effect markers (rings + burst / splash dot) ───────── */
+.bn-fx{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+.bn-fx-core{ font-size:clamp(.7rem, 4.6vw, 1.05rem); line-height:1;
+  filter:drop-shadow(0 0 5px rgba(255,150,40,.95)); }
+.bn-fx.sm .bn-fx-core{ font-size:clamp(.55rem, 3.4vw, .8rem); }
+.bn-ring{ position:absolute; border-radius:50%; }
+.bn-ring-hit{ width:64%; height:64%; border:2px solid rgba(255,180,70,.95);
+  box-shadow:0 0 10px rgba(255,120,20,.85), inset 0 0 6px rgba(255,150,40,.6); }
+.bn-ring-splash{ width:60%; height:60%; border:2px solid rgba(165,225,255,.9);
+  box-shadow:0 0 6px rgba(150,215,255,.7); }
+.bn-miss-dot{ width:26%; height:26%; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #f2fbff, #8fbcd6 80%);
+  box-shadow:0 0 5px rgba(190,230,255,.85), inset 0 0 2px rgba(255,255,255,.9); }
+.bn-fx.sm .bn-miss-dot{ width:30%; height:30%; }
 
 @keyframes bnPop{ 0%{ transform:scale(.4); opacity:.3; } 70%{ transform:scale(1.12); } 100%{ transform:scale(1); opacity:1; } }
+
+/* ── AI targeting indicator ──────────────────────────────────────────── */
+.bn-ai-thinking{ display:inline-flex; align-items:center; gap:.35rem; font-weight:900; font-size:.78rem;
+  color:var(--accent,#7c5cbf); background:color-mix(in srgb, var(--accent,#7c5cbf) 14%, transparent);
+  padding:.28rem .7rem; border-radius:999px; }
+.bn-ai-scope{ animation:bnScope 1.4s ease-in-out infinite; }
+@keyframes bnScope{ 0%,100%{ transform:translateX(-1px) rotate(-6deg); } 50%{ transform:translateX(1px) rotate(6deg); } }
+.bn-ai-dots{ display:inline-flex; gap:2px; }
+.bn-ai-dots i{ width:4px; height:4px; border-radius:50%; background:currentColor; opacity:.4; animation:bnDot 1s infinite; }
+.bn-ai-dots i:nth-child(2){ animation-delay:.15s; }
+.bn-ai-dots i:nth-child(3){ animation-delay:.3s; }
+@keyframes bnDot{ 0%,100%{ opacity:.3; transform:translateY(0); } 40%{ opacity:1; transform:translateY(-2px); } }
 
 /* Fleet list ---------------------------------------------------------- */
 .bn-fleet-list{ display:flex; flex-wrap:wrap; gap:.35rem .7rem; justify-content:center; font-size:.68rem; font-weight:800; }

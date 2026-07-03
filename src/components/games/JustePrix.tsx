@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { gameHistory } from "../../hooks/useGameHistory";
 import type { Room, JpProduct } from "../../types";
@@ -152,6 +153,9 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
   const timerPct   = (timeLeft / TIMER_SEC) * 100;
   const timerColor = timerPct > 55 ? "#4caf50" : timerPct > 28 ? "#ffbe42" : "#ff5252";
 
+  // Presentation-only: slot-machine count-up for the price reveal.
+  const priceCount = useCountUp(product ? product.price : 0, 1200, revealed && !!product);
+
   /* ── Loading ── */
   if (isLoading || !product) {
     return (
@@ -200,20 +204,54 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
       )}
 
       {/* Product card */}
-      <div className="jp-product-card">
-        {product.thumbnail ? (
-          <img src={product.thumbnail} alt={product.title} className="jp-product-img" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-        ) : (
-          <div className="jp-img-placeholder">🛒</div>
-        )}
-        <div className="jp-product-cat">{product.category}</div>
-        <div className="jp-product-title">{product.title}</div>
-        <div className="jp-question">💬 À ton avis, combien ça coûte ?</div>
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={product.id}
+          className="jp-product-card"
+          initial={{ opacity: 0, scale: 0.85, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: -16 }}
+          transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        >
+          {product.thumbnail ? (
+            <motion.img
+              src={product.thumbnail} alt={product.title} className="jp-product-img"
+              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 380, damping: 20, delay: 0.1 }}
+            />
+          ) : (
+            <div className="jp-img-placeholder">🛒</div>
+          )}
+          <motion.div
+            className="jp-product-cat"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 15, delay: 0.16 }}
+          >
+            {product.category}
+          </motion.div>
+          <motion.div
+            className="jp-product-title"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22, duration: 0.32 }}
+          >
+            {product.title}
+          </motion.div>
+          <div className="jp-question">💬 À ton avis, combien ça coûte ?</div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Input zone / reveal */}
       {!revealed ? (
-        <div className="jp-input-zone">
+        <motion.div
+          className="jp-input-zone"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.28, duration: 0.3 }}
+        >
           {submitted ? (
             <div className="jp-submitted">
               ✅ Réponse envoyée !
@@ -238,33 +276,77 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
               </button>
             </div>
           )}
-        </div>
+        </motion.div>
       ) : (
         <div className="jp-reveal">
-          <div className="jp-real-price">
-            Prix réel : <strong>{product.price.toFixed(2)} €</strong>
-          </div>
+          <motion.div
+            className="jp-real-price"
+            initial={{ scale: 0, opacity: 0, rotate: -8 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 340, damping: 13, delay: 0.1 }}
+          >
+            Prix réel : <strong>{priceCount.toFixed(2)} €</strong>
+          </motion.div>
           <div className="jp-results">
-            {revealEntries.sort((a, b) => a.diff - b.diff).map(({ p, val, diff }) => {
-              const isWinner = diff === minDiff && diff !== Infinity;
-              const isPerfect = diff === 0;
-              return (
-                <div key={p.id} className={`jp-result-row ${isWinner ? "jp-winner-row" : ""}`}
-                  style={{ borderLeftColor: p.color || "var(--accent)" }}>
-                  <span className="jp-r-name">{p.emoji} {p.name}</span>
-                  {val !== undefined ? (
-                    <>
-                      <span className="jp-r-guess">{val.toFixed(2)} €</span>
-                      <span className="jp-r-diff">
-                        {isPerfect ? "🎯 Parfait ! +35pts" : isWinner ? `✨ ±${diff.toFixed(2)} € +10pts` : `±${diff.toFixed(2)} €`}
+            {(() => {
+              const sorted = revealEntries.slice().sort((a, b) => a.diff - b.diff);
+              const finite = sorted.filter(e => e.diff !== Infinity).map(e => e.diff);
+              const maxDiff = finite.length ? Math.max(...finite, 0.0001) : 1;
+              return sorted.map(({ p, val, diff }, i) => {
+                const isWinner = diff === minDiff && diff !== Infinity;
+                const isPerfect = diff === 0;
+                // Closeness fill: 100% for the closest, shrinking with distance.
+                const closeness = diff === Infinity ? 0 : Math.max(0.06, 1 - diff / maxDiff);
+                const barColor = isPerfect || isWinner ? "var(--green)" : "var(--accent)";
+                return (
+                  <motion.div
+                    key={p.id}
+                    className={`jp-result-row ${isWinner ? "jp-winner-row" : ""}`}
+                    style={{ borderLeftColor: p.color || "var(--accent)" }}
+                    initial={{ opacity: 0, x: -22 }}
+                    animate={isWinner
+                      ? { opacity: 1, x: 0, scale: [1, 1.06, 1.01] }
+                      : { opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + i * 0.12, type: "spring", stiffness: 300, damping: 22 }}
+                  >
+                    {isWinner && (
+                      <span className="jp-confetti" aria-hidden="true">
+                        {[...Array(6)].map((_, k) => (
+                          <motion.i
+                            key={k}
+                            className="jp-confetti-bit"
+                            style={{ left: `${12 + k * 14}%`, background: ["var(--gold)", "var(--primary)", "var(--accent)", "var(--green)"][k % 4] }}
+                            initial={{ opacity: 0, y: 6, scale: 0 }}
+                            animate={{ opacity: [0, 1, 0], y: -26 - (k % 3) * 8, scale: [0, 1, 0.6] }}
+                            transition={{ duration: 1, delay: 0.6 + i * 0.12 + k * 0.04, ease: "easeOut" }}
+                          />
+                        ))}
                       </span>
-                    </>
-                  ) : (
-                    <span className="jp-r-noans">⏰ Pas de réponse</span>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                    <span className="jp-r-name">{p.emoji} {p.name}</span>
+                    {val !== undefined ? (
+                      <>
+                        <span className="jp-r-guess">{val.toFixed(2)} €</span>
+                        <span className="jp-r-diff">
+                          {isPerfect ? "🎯 Parfait ! +35pts" : isWinner ? `✨ ±${diff.toFixed(2)} € +10pts` : `±${diff.toFixed(2)} €`}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="jp-r-noans">⏰ Pas de réponse</span>
+                    )}
+                    <span className="jp-closeness-track">
+                      <motion.span
+                        className="jp-closeness-fill"
+                        style={{ background: barColor }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${closeness * 100}%` }}
+                        transition={{ delay: 0.62 + i * 0.12, duration: 0.7, ease: "easeOut" }}
+                      />
+                    </span>
+                  </motion.div>
+                );
+              });
+            })()}
           </div>
           {(isHost || isSolo) ? (
             <button className="btn btn-primary" style={{ marginTop: "1rem", width: "100%" }} onClick={handleNextRound}>
@@ -275,6 +357,62 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
           )}
         </div>
       )}
+
+      <style>{JP_CSS}</style>
     </div>
   );
 }
+
+/* Presentation-only count-up: animates a number from 0 → target with an
+   ease-out curve when `run` flips true. Pure React + rAF, no libraries. */
+function useCountUp(target: number, duration: number, run: boolean) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!run) { setVal(0); return; }
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setVal(target * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else setVal(target);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, run]);
+  return val;
+}
+
+/* Premium chrome for Le Juste Prix. Theme-variable driven for light + dark.
+   Only decorates presentation — product fetch, answers, scoring untouched. */
+const JP_CSS = `
+.jp-real-price {
+  position: relative;
+  box-shadow: 0 6px 20px rgba(240,171,52,.4);
+  will-change: transform;
+}
+.jp-result-row { position: relative; overflow: hidden; }
+.jp-closeness-track {
+  position: absolute; left: 0; bottom: 0; height: 3px; width: 100%;
+  background: transparent; pointer-events: none;
+}
+.jp-closeness-fill {
+  display: block; height: 100%; border-radius: 0 3px 0 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.jp-winner-row {
+  animation: jpWinnerGlow 1.6s ease-in-out infinite alternate;
+}
+@keyframes jpWinnerGlow {
+  0%   { box-shadow: 0 2px 10px color-mix(in srgb, var(--green) 26%, transparent); }
+  100% { box-shadow: 0 4px 20px color-mix(in srgb, var(--green) 55%, transparent); }
+}
+.jp-confetti {
+  position: absolute; inset: 0; pointer-events: none; overflow: visible; z-index: 2;
+}
+.jp-confetti-bit {
+  position: absolute; top: 40%; width: 6px; height: 6px; border-radius: 1px;
+  display: block;
+}
+`;
