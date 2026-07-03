@@ -1,5 +1,5 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion";
 
 export interface MemberPreset {
   name: string;
@@ -109,6 +109,33 @@ export interface Room {
   dessinCorrectGuesser?: string | null;
   dessinRoundActive?: boolean;
   dessinGuessChat?: DessinGuessEntry[];
+  // L'Imposteur
+  impPhase?: "reveal" | "vote" | "result" | null;
+  impRound?: number;
+  impImposterId?: string;
+  impWordCivil?: string;
+  impWordImposter?: string;
+  impSeen?: Record<string, boolean>;
+  impVotes?: Record<string, string>;
+  // Qui de nous… ?
+  qdnPhase?: "vote" | "reveal" | null;
+  qdnRound?: number;
+  qdnTotalRounds?: number;
+  qdnQuestion?: string;
+  qdnUsed?: number[];
+  qdnVotes?: Record<string, string>;
+  // Bataille Navale
+  bnPhase?: "place" | "battle" | "over";
+  bnGrids?: Record<string, number[][]>;
+  bnReady?: Record<string, boolean>;
+  bnShots?: Record<string, Record<string, "hit" | "miss">>;
+  bnTurn?: string;
+  bnWinner?: string;
+  // Morpion
+  mpCells?: string[];
+  mpTurn?: string;
+  mpWinner?: string;
+  mpLine?: number[];
 }
 
 export interface AppState {

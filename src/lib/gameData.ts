@@ -16,7 +16,72 @@ export const GAMES: Game[] = [
   { id: "defi", name: "Défis Chrono", emoji: "⏱️", desc: "Mini-défis rigolos — le plus rapide gagne", min: 2, max: 4, color: "#e2f0cb" },
   { id: "justeprix", name: "Le Juste Prix", emoji: "💰", desc: "Estime le prix d'un objet — le plus proche gagne !", min: 1, max: 4, color: "#ffd6a5" },
   { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#caffbf" },
+  { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#ff9db0" },
+  { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#8fd9b6" },
+  { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#7cb8ff" },
+  { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#ffbf6b" },
   { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#9ec5ff" },
+];
+
+/* ── L'Imposteur : paires de mots (civil / imposteur, proches mais différents) ── */
+export const IMPOSTEUR_WORDS: { civil: string; imposter: string }[] = [
+  { civil: "Chat", imposter: "Chien" }, { civil: "Plage", imposter: "Piscine" },
+  { civil: "Café", imposter: "Thé" }, { civil: "Pizza", imposter: "Quiche" },
+  { civil: "Voiture", imposter: "Moto" }, { civil: "Été", imposter: "Hiver" },
+  { civil: "Football", imposter: "Rugby" }, { civil: "Pomme", imposter: "Poire" },
+  { civil: "Soleil", imposter: "Lune" }, { civil: "Roi", imposter: "Reine" },
+  { civil: "Guitare", imposter: "Violon" }, { civil: "Médecin", imposter: "Infirmier" },
+  { civil: "Montagne", imposter: "Colline" }, { civil: "Train", imposter: "Métro" },
+  { civil: "Chocolat", imposter: "Bonbon" }, { civil: "Livre", imposter: "Magazine" },
+  { civil: "Neige", imposter: "Pluie" }, { civil: "Lion", imposter: "Tigre" },
+  { civil: "Fraise", imposter: "Framboise" }, { civil: "Avion", imposter: "Hélicoptère" },
+  { civil: "Professeur", imposter: "Élève" }, { civil: "Téléphone", imposter: "Tablette" },
+  { civil: "Boulanger", imposter: "Pâtissier" }, { civil: "Rivière", imposter: "Lac" },
+  { civil: "Sandwich", imposter: "Hamburger" }, { civil: "Château", imposter: "Palais" },
+  { civil: "Vélo", imposter: "Trottinette" }, { civil: "Miel", imposter: "Confiture" },
+  { civil: "Éléphant", imposter: "Rhinocéros" }, { civil: "Noël", imposter: "Anniversaire" },
+  { civil: "Piano", imposter: "Orgue" }, { civil: "Tomate", imposter: "Poivron" },
+  { civil: "Requin", imposter: "Baleine" }, { civil: "Désert", imposter: "Savane" },
+];
+
+/* ── Qui de nous… ? : questions rigolotes (familiales) ── */
+export const QUIDENOUS_QUESTIONS: string[] = [
+  "Qui est le plus susceptible d'oublier son propre anniversaire ?",
+  "Qui piquerait le dernier morceau de gâteau ?",
+  "Qui rirait à un moment inapproprié ?",
+  "Qui deviendrait célèbre sur les réseaux sociaux ?",
+  "Qui se perdrait dans sa propre ville ?",
+  "Qui parlerait à un inconnu pendant des heures ?",
+  "Qui oublierait où il a garé la voiture ?",
+  "Qui mangerait des pâtes au petit-déjeuner ?",
+  "Qui dormirait jusqu'à midi le week-end ?",
+  "Qui gagnerait un concours de grimaces ?",
+  "Qui chanterait sous la douche le plus fort ?",
+  "Qui serait le meilleur dans une émission de cuisine ?",
+  "Qui raconterait la même histoire trois fois ?",
+  "Qui survivrait le plus longtemps sur une île déserte ?",
+  "Qui pleurerait devant un dessin animé ?",
+  "Qui aurait le plus de mal à garder un secret ?",
+  "Qui deviendrait le prochain président ?",
+  "Qui adopterait dix animaux ?",
+  "Qui danserait toute la nuit à une fête ?",
+  "Qui oublierait son téléphone à la maison ?",
+  "Qui serait en retard à son propre mariage ?",
+  "Qui dépenserait tout son argent en bonbons ?",
+  "Qui deviendrait un grand explorateur ?",
+  "Qui gagnerait à un jeu télévisé ?",
+  "Qui serait le plus courageux face à une araignée ?",
+  "Qui deviendrait un chef étoilé ?",
+  "Qui rangerait sa chambre en dernier ?",
+  "Qui ferait le tour du monde en solo ?",
+  "Qui inventerait un mot qui n'existe pas ?",
+  "Qui serait la star d'un karaoké ?",
+  "Qui mangerait une pizza entière tout seul ?",
+  "Qui donnerait un surnom rigolo à tout le monde ?",
+  "Qui deviendrait millionnaire en premier ?",
+  "Qui craquerait pour un chiot dans la rue ?",
+  "Qui serait le plus bavard en voyage ?",
+  "Qui ferait le plus de blagues nulles ?",
 ];
 
 export const LETTERS_FR: Record<string, number> = {
@@ -114,6 +179,10 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "dessin") return { dessinManche: 0, dessinTotalManches: 0, dessinMot: null, dessinDessinateur: null, dessinPaths: [], dessinCorrectGuesser: null, dessinRoundActive: false, dessinGuessChat: [] };
   if (game === "scrabble") { const bag = buildBag(); return { bag, racks: {}, currentTurn: 0, roundWord: "", selectedTiles: [], wordHistory: [] }; }
   if (game === "chronovore") return {};
+  if (game === "imposteur") return { impPhase: null, impRound: 0, impVotes: {}, impSeen: {} };
+  if (game === "quidenous") return { qdnPhase: null, qdnRound: 0, qdnTotalRounds: 8, qdnUsed: [], qdnVotes: {} };
+  if (game === "bataille") return { bnPhase: "place", bnGrids: {}, bnReady: {}, bnShots: {}, bnTurn: "", bnWinner: "" };
+  if (game === "morpion") return { mpCells: Array(9).fill(""), mpTurn: "", mpWinner: "", mpLine: [] };
   return {};
 }
 

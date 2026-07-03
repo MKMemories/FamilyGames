@@ -15,7 +15,13 @@ import { Defi } from "./components/games/Defi";
 import { JustePrix } from "./components/games/JustePrix";
 import { Dessin } from "./components/games/Dessin";
 import { Chronovore } from "./components/games/Chronovore";
+import { Imposteur } from "./components/games/Imposteur";
+import { QuiDeNous } from "./components/games/QuiDeNous";
+import { BatailleNavale } from "./components/games/BatailleNavale";
+import { Morpion } from "./components/games/Morpion";
 import { Toast } from "./components/Toast";
+import { ThemeToggle } from "./components/ThemeToggle";
+import { useTheme } from "./hooks/useTheme";
 import type { AppState, GameId, Room } from "./types";
 
 function App() {
@@ -32,6 +38,7 @@ function App() {
   });
   const [toast, setToast] = useState("");
   const unsubs = useRef<(() => void)[]>([]);
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const showToast = (msg: string) => setToast(msg);
 
@@ -189,6 +196,8 @@ function App() {
 
   return (
     <>
+      {screen !== "game" && <ThemeToggle theme={theme} onToggle={toggleTheme} />}
+
       {screen === "home" && (
         <HomeScreen
           playerName={playerName}
@@ -255,6 +264,18 @@ function App() {
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
           {game === "chronovore" && <Chronovore onLeave={leaveRoom} />}
+          {game === "imposteur" && (
+            <Imposteur room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "quidenous" && (
+            <QuiDeNous room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "bataille" && (
+            <BatailleNavale room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "morpion" && (
+            <Morpion room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
         </>
       )}
 

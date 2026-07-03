@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { MEMBER_PRESETS } from "../lib/gameData";
 
 interface HomeScreenProps {
@@ -10,7 +11,6 @@ interface HomeScreenProps {
 
 export function HomeScreen({ playerName, onSelectPlayer, onContinue, onToast }: HomeScreenProps) {
   const [customName, setCustomName] = useState("");
-  const preset = MEMBER_PRESETS.find(m => m.name === playerName);
 
   const handleContinue = () => {
     if (customName.trim()) {
@@ -30,25 +30,37 @@ export function HomeScreen({ playerName, onSelectPlayer, onContinue, onToast }: 
       <div className="home-deco">
         <span>🎲</span><span>🃏</span><span>♟️</span><span>🔤</span><span>⏱️</span><span>🧠</span>
       </div>
-      <div className="home-content">
+
+      <motion.div
+        className="home-content"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26 }}
+      >
         <div className="home-logo">
           <span className="logo-badge">🎮</span>
           <h1 className="logo-title">Family Game Night</h1>
           <div className="logo-sub">KHELIJ</div>
+          <p className="home-tagline">Le salon de jeux de la famille — chacun son écran, tous ensemble ✨</p>
         </div>
+
         <div className="player-presets">
           <p className="label-sm">Qui es-tu ?</p>
           <div className="preset-grid">
-            {MEMBER_PRESETS.map(m => (
-              <button
+            {MEMBER_PRESETS.map((m, i) => (
+              <motion.button
                 key={m.name}
                 className={`preset-btn ${playerName === m.name ? "active" : ""}`}
                 style={{ "--pc": m.color } as React.CSSProperties}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.15 + i * 0.06, type: "spring", stiffness: 400, damping: 24 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => { onSelectPlayer(m.name, m.color); setCustomName(""); }}
               >
                 <span className="preset-emoji">{m.emoji}</span>
                 <span className="preset-name">{m.name}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
           <div className="or-row"><span>ou</span></div>
@@ -62,10 +74,16 @@ export function HomeScreen({ playerName, onSelectPlayer, onContinue, onToast }: 
             />
           </div>
         </div>
-        <button className="btn btn-primary big-btn" onClick={handleContinue}>
+
+        <motion.button
+          className="btn btn-primary big-btn"
+          onClick={handleContinue}
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+        >
           Choisir un jeu →
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </div>
   );
 }
