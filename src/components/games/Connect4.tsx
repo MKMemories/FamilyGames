@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { checkConnect4Win } from "../../lib/gameData";
 import { useSoloAI } from "../../hooks/useSoloAI";
@@ -5,6 +6,11 @@ import { bestConnect4Move } from "../../lib/ai/connect4AI";
 import type { Room } from "../../types";
 
 const COLORS_C4 = ["#ff5252", "#FFD700"];
+// Glossy 3D discs — top-left highlight, deep rim.
+const DISC_GRAD = [
+  "radial-gradient(circle at 34% 28%, #ff9a8f 0%, #ff5252 42%, #d32f2f 78%, #a31515 100%)",
+  "radial-gradient(circle at 34% 28%, #fff3a8 0%, #ffd400 42%, #e0a800 78%, #a67c00 100%)",
+];
 
 interface Connect4Props {
   room: Room;
@@ -78,11 +84,17 @@ export function Connect4({ room, roomId, playerId, onLeave }: Connect4Props) {
               style={{ pointerEvents: isMyTurn && !room.winner ? "auto" : "none" }}
             >
               {Array(6).fill(0).map((_, row) => (
-                <div
-                  key={row}
-                  className={`c4-cell ${board[row][col] ? "filled" : ""}`}
-                  style={board[row][col] ? { background: COLORS_C4[(board[row][col] - 1) % 2] } : undefined}
-                />
+                <div key={row} className={`c4-cell ${board[row][col] ? "filled" : ""}`}>
+                  {board[row][col] ? (
+                    <motion.div
+                      className="c4-disc"
+                      style={{ background: DISC_GRAD[(board[row][col] - 1) % 2] }}
+                      initial={{ y: `-${(row + 1) * 108}%`, opacity: 0.85 }}
+                      animate={{ y: "0%", opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 700, damping: 22, mass: 0.9 }}
+                    />
+                  ) : null}
+                </div>
               ))}
             </div>
           ))}

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { initCheckersBoard } from "../../lib/gameData";
 import {
@@ -7,6 +8,7 @@ import {
   hasAnyMove,
   legalMovesFrom,
 } from "../../lib/checkersRules";
+import { useTrackedPieces } from "../../lib/pieceTracking";
 import { bestCheckersTurn } from "../../lib/ai/checkersAI";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import type { Room } from "../../types";
@@ -31,6 +33,67 @@ const CSS = `
   color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
   box-shadow: var(--shadow);
 }
+
+/* ── Two-layer animated board ─────────────────────────────── */
+.checkers-stage {
+  position: relative; width: min(92vw, 400px); aspect-ratio: 1; margin: 1rem auto;
+  border-radius: 12px; overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.2);
+  border: 3px solid #6b4a30;
+}
+.checkers-squares {
+  position: absolute; inset: 0; display: grid;
+  grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+}
+.checkers-stage .chk-cell { aspect-ratio: auto; width: 100%; height: 100%; }
+.checkers-stage .chk-cell:not(.dark) { background: linear-gradient(135deg, #f3ddb8 0%, #ead1a4 100%); }
+.checkers-stage .chk-cell.dark { background: linear-gradient(135deg, #b98a5f 0%, #a2703f 100%); }
+.checkers-stage .chk-cell.hint::after {
+  content: ''; position: absolute; inset: 32%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(80,190,110,.9), rgba(70,170,95,.5));
+  box-shadow: 0 0 8px 1px rgba(76,175,80,.5); pointer-events: none; z-index: 1;
+}
+
+.piece-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.anim-piece {
+  position: absolute; top: 0; left: 0; width: 12.5%; height: 12.5%;
+  display: flex; align-items: center; justify-content: center; will-change: transform;
+}
+
+/* Realistic beveled, glossy discs. */
+.ckp-disc {
+  position: relative; width: 76%; height: 76%; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow:
+    0 5px 8px rgba(0,0,0,.45),
+    inset 0 2px 4px rgba(255,255,255,.4),
+    inset 0 -5px 9px rgba(0,0,0,.4),
+    0 0 0 2px rgba(0,0,0,.22);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.ckp-red  { background: radial-gradient(circle at 34% 28%, #ff9a90 0%, #f4483c 45%, #b41f16 100%); }
+.ckp-dark { background: radial-gradient(circle at 34% 28%, #55556f 0%, #24243c 48%, #0c0c18 100%); }
+/* Concentric ring detailing on top of the disc. */
+.ckp-disc::before {
+  content: ''; position: absolute; inset: 15%; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.16);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,.2);
+}
+/* Soft cast shadow beneath the disc. */
+.ckp-disc::after {
+  content: ''; position: absolute; bottom: -9%; left: 13%; width: 74%; height: 22%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.42), transparent 72%);
+  border-radius: 50%; z-index: -1; filter: blur(2px);
+}
+/* Kings: golden ring + crown emblem. */
+.ckp-king::before { border-color: rgba(255,210,80,.7); box-shadow: inset 0 0 0 2px rgba(255,190,50,.45); }
+.ckp-crown {
+  position: relative; z-index: 2; font-size: clamp(.8rem, 4.4vw, 1.4rem);
+  color: #ffd54a; line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 7px rgba(255,190,60,.65);
+}
+.ckp-sel { transform: scale(1.12) translateY(-2px); box-shadow: 0 8px 12px rgba(0,0,0,.5), inset 0 2px 4px rgba(255,255,255,.4), inset 0 -5px 9px rgba(0,0,0,.4), 0 0 0 3px rgba(76,175,80,.85); }
+
 .chk-cell.chk-chain::before {
   content: ''; position: absolute; inset: 6%; border-radius: 50%;
   box-shadow: 0 0 0 3px var(--gold), 0 0 14px 2px var(--gold);
@@ -168,6 +231,9 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
 
   const turnName = (players[currentTurn % 2] || {}).name || "…";
 
+  // Stable-id pieces for the floating animation layer (render only).
+  const pieces = useTrackedPieces(board);
+
   return (
     <div className="screen game-screen">
       <style>{CSS}</style>
@@ -197,35 +263,59 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
         </div>
       )}
 
-      <div className="checkers-board">
-        {board.map((row, r) =>
-          row.map((cell, c) => {
-            const isDark = (r + c) % 2 === 1;
-            const isSel = !!sel && sel[0] === r && sel[1] === c;
-            const isHint = hints.some(h => h[0] === r && h[1] === c);
-            const isChain = !!chain && chain[0] === r && chain[1] === c;
-            // Capture-destination hints get a red overlay (vs green for steps).
-            const capHint = isHint && !!sel && Math.abs(r - sel[0]) === 2;
-            const cls = [
-              "chk-cell",
-              isDark ? "dark" : "",
-              isSel ? "sel" : "",
-              isHint ? "hint" : "",
-              capHint ? "chk-cap" : "",
-              isChain ? "chk-chain" : "",
-            ].filter(Boolean).join(" ");
-            return (
-              <div key={`${r}-${c}`} className={cls} onClick={() => handleCell(r, c)}>
-                {(cell === 1 || cell === 3) && (
-                  <div className="piece" style={{ background: PCOL[0] }}>{cell === 3 ? "♛" : ""}</div>
-                )}
-                {(cell === 2 || cell === 4) && (
-                  <div className="piece" style={{ background: PCOL[1] }}>{cell === 4 ? "♛" : ""}</div>
-                )}
-              </div>
-            );
-          })
-        )}
+      <div className="checkers-stage">
+        {/* Squares layer — clicks + highlights, no discs. */}
+        <div className="checkers-squares">
+          {board.map((row, r) =>
+            row.map((_, c) => {
+              const isDark = (r + c) % 2 === 1;
+              const isSel = !!sel && sel[0] === r && sel[1] === c;
+              const isHint = hints.some(h => h[0] === r && h[1] === c);
+              const isChain = !!chain && chain[0] === r && chain[1] === c;
+              // Capture-destination hints get a red overlay (vs green for steps).
+              const capHint = isHint && !!sel && Math.abs(r - sel[0]) === 2;
+              const cls = [
+                "chk-cell",
+                isDark ? "dark" : "",
+                isSel ? "sel" : "",
+                isHint ? "hint" : "",
+                capHint ? "chk-cap" : "",
+                isChain ? "chk-chain" : "",
+              ].filter(Boolean).join(" ");
+              return <div key={`${r}-${c}`} className={cls} onClick={() => handleCell(r, c)} />;
+            })
+          )}
+        </div>
+
+        {/* Piece layer — floats above squares and glides between them. */}
+        <div className="piece-layer">
+          <AnimatePresence initial={false}>
+            {pieces.map(p => {
+              const isRed = p.kind === "1" || p.kind === "3";
+              const isKing = p.kind === "3" || p.kind === "4";
+              const isSelPiece = !!sel && sel[0] === p.r && sel[1] === p.c;
+              return (
+                <motion.div
+                  key={p.id}
+                  className="anim-piece"
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  animate={{ x: `${p.c * 100}%`, y: `${p.r * 100}%`, opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.3 }}
+                  transition={{
+                    x: { type: "spring", stiffness: 520, damping: 34 },
+                    y: { type: "spring", stiffness: 520, damping: 34 },
+                    opacity: { duration: 0.18 },
+                    scale: { duration: 0.18 },
+                  }}
+                >
+                  <div className={`ckp-disc ${isRed ? "ckp-red" : "ckp-dark"} ${isKing ? "ckp-king" : ""} ${isSelPiece ? "ckp-sel" : ""}`}>
+                    {isKing && <span className="ckp-crown">♛</span>}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
       </div>
 
       <div className="chk-legend">

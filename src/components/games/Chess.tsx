@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { CHESS_INIT, CHESS_UNICODE } from "../../lib/gameData";
 import { legalMoves, applyMove, isPromotion, statusFor, type Ctx } from "../../lib/chessRules";
+import { useTrackedPieces } from "../../lib/pieceTracking";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { bestChessMove } from "../../lib/ai/chessAI";
 import type { Room } from "../../types";
@@ -111,6 +113,10 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
   const turnName = (players[currentTurn % 2] || {}).name || "…";
   const inCheck = !!check && !room.winner;
 
+  // Stable-id pieces for the floating animation layer (render only — the
+  // authoritative board above still drives every click/rule/AI decision).
+  const pieces = useTrackedPieces(board);
+
   return (
     <div className="screen game-screen">
       <div className="game-topbar">
@@ -133,29 +139,54 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
         </div>
       )}
 
-      <div className="chess-board">
-        {board.map((row, r) =>
-          row.map((cell, c) => {
-            const light = (r + c) % 2 === 0;
-            const isSel = sel && sel[0] === r && sel[1] === c;
-            const isHint = hints.some(h => h[0] === r && h[1] === c);
-            const isCheck = check && check[0] === r && check[1] === c;
-            const whitePiece = cell !== "" && cell === cell.toUpperCase();
-            return (
-              <div
-                key={`${r}-${c}`}
-                className={`chess-cell ${light ? "light" : "dark"} ${isSel ? "sel" : ""} ${isHint ? "hint" : ""} ${isCheck ? "check" : ""}`}
-                onClick={() => handleCell(r, c)}
-              >
-                {cell && (
-                  <span className={`chess-piece ${whitePiece ? "white" : "black"}`}>
-                    {CHESS_UNICODE[cell] || cell}
+      <div className="chess-stage">
+        {/* Squares layer — clicks + highlights, no piece glyphs. */}
+        <div className="chess-squares">
+          {board.map((row, r) =>
+            row.map((_, c) => {
+              const light = (r + c) % 2 === 0;
+              const isSel = sel && sel[0] === r && sel[1] === c;
+              const isHint = hints.some(h => h[0] === r && h[1] === c);
+              const isCheck = check && check[0] === r && check[1] === c;
+              return (
+                <div
+                  key={`${r}-${c}`}
+                  className={`chess-cell ${light ? "light" : "dark"} ${isSel ? "sel" : ""} ${isHint ? "hint" : ""} ${isCheck ? "check" : ""}`}
+                  onClick={() => handleCell(r, c)}
+                />
+              );
+            })
+          )}
+        </div>
+
+        {/* Piece layer — floats above squares and glides between them. */}
+        <div className="piece-layer">
+          <AnimatePresence initial={false}>
+            {pieces.map(p => {
+              const whitePiece = p.kind === p.kind.toUpperCase();
+              const isSelPiece = !!sel && sel[0] === p.r && sel[1] === p.c;
+              return (
+                <motion.div
+                  key={p.id}
+                  className="anim-piece"
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  animate={{ x: `${p.c * 100}%`, y: `${p.r * 100}%`, opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.3 }}
+                  transition={{
+                    x: { type: "spring", stiffness: 520, damping: 34 },
+                    y: { type: "spring", stiffness: 520, damping: 34 },
+                    opacity: { duration: 0.18 },
+                    scale: { duration: 0.18 },
+                  }}
+                >
+                  <span className={`cxp-piece ${whitePiece ? "cxp-white" : "cxp-black"} ${isSelPiece ? "cxp-sel" : ""}`}>
+                    {CHESS_UNICODE[p.kind.toLowerCase()] || p.kind}
                   </span>
-                )}
-              </div>
-            );
-          })
-        )}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
       </div>
       <div className="chess-coords"><div>a b c d e f g h</div></div>
 
@@ -190,7 +221,57 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
 /* Theme-aware chrome; the wood squares stay in index.css. New classes are
    prefixed `chess-` and read the app's CSS variables for light/dark parity. */
 const CHESS_CSS = `
-.chess-piece { position: relative; z-index: 2; }
+/* ── Two-layer animated board ─────────────────────────────── */
+.chess-stage {
+  position: relative; width: min(92vw, 400px); aspect-ratio: 1; margin: 1rem auto;
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 18px 40px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.2);
+  border: 3px solid #6b4a30;
+}
+.chess-squares {
+  position: absolute; inset: 0; display: grid;
+  grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+}
+.chess-stage .chess-cell { aspect-ratio: auto; width: 100%; height: 100%; }
+/* Realistic wood squares */
+.chess-stage .chess-cell.light {
+  background: linear-gradient(135deg, #f3ddb8 0%, #ead1a4 100%);
+}
+.chess-stage .chess-cell.dark {
+  background: linear-gradient(135deg, #b98a5f 0%, #a2703f 100%);
+}
+.chess-stage .chess-cell.hint::after {
+  content: ''; position: absolute; inset: 33%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(80,190,110,.9), rgba(70,170,95,.55));
+  box-shadow: 0 0 8px 1px rgba(76,175,80,.5); pointer-events: none; z-index: 1;
+}
+
+.piece-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.anim-piece {
+  position: absolute; top: 0; left: 0; width: 12.5%; height: 12.5%;
+  display: flex; align-items: center; justify-content: center; will-change: transform;
+}
+
+/* Realistic chess glyphs: solid silhouettes filled per side, crisp outline. */
+.cxp-piece {
+  font-size: clamp(1.4rem, 7vw, 2.4rem); line-height: 1; user-select: none;
+  display: block; transition: transform .16s ease, filter .16s ease;
+}
+.cxp-white {
+  color: #f7f3ea;
+  -webkit-text-stroke: 1.4px #2a2018; text-stroke: 1.4px #2a2018;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)) drop-shadow(0 0 1px rgba(0,0,0,.6));
+}
+.cxp-black {
+  color: #26242e;
+  -webkit-text-stroke: 1px #05050a; text-stroke: 1px #05050a;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)) drop-shadow(0 -1px 1px rgba(255,255,255,.28));
+}
+.cxp-sel {
+  transform: scale(1.14) translateY(-2px);
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,.55)) drop-shadow(0 0 10px rgba(255,214,0,.6));
+}
+
 .chess-cell.check::before {
   content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1;
   background: radial-gradient(circle at 50% 45%, rgba(240,69,94,.75), rgba(240,69,94,.30) 65%, transparent 78%);
