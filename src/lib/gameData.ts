@@ -171,8 +171,8 @@ export function uid(): string {
 
 export function getInitData(game: GameId): Record<string, any> {
   if (game === "connect4") return { board: Array(6).fill(null).map(() => Array(7).fill(0)), currentTurn: 0, selected: null, hints: [] };
-  if (game === "checkers") return { board: initCheckersBoard(), currentTurn: 0, selected: null, hints: [] };
-  if (game === "chess") return { board: CHESS_INIT.map(r => [...r]), currentTurn: 0, selected: null, hints: [] };
+  if (game === "checkers") return { board: initCheckersBoard(), currentTurn: 0, selected: null, hints: [], chkChain: null };
+  if (game === "chess") return { board: CHESS_INIT.map(r => [...r]), currentTurn: 0, selected: null, hints: [], chessCastle: "KQkq", chessEp: null, chessCheck: null };
   if (game === "quiz") return { questionIdx: 0, quizThemes: ["all"], quizAnswers: {}, quizQuestions: null, quizOptions: [], revealed: false, totalQuestions: 10 };
   if (game === "defi") { const d = DEFIS[0]; return { defiIdx: 0, timerLeft: d.timer, timerRunning: false }; }
   if (game === "justeprix") return { jpRound: 0, jpTotalRounds: 3, jpProduct: null, jpAnswers: {}, jpRevealed: false };

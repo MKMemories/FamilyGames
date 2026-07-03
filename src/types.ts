@@ -74,6 +74,12 @@ export interface Room {
   currentTurn?: number;
   selected?: [number, number] | null;
   hints?: [number, number][];
+  // Chess (full rules)
+  chessCastle?: string;            // castling rights, e.g. "KQkq" ("" if none)
+  chessEp?: string | null;         // en-passant target square "r,c" or null
+  chessCheck?: [number, number] | null; // king square in check (for highlight)
+  // Checkers (mandatory capture + multi-jump)
+  chkChain?: [number, number] | null;   // piece that must keep jumping this turn
   // Scrabble
   bag?: string[];
   racks?: Record<string, string[]>;

@@ -37,7 +37,7 @@ export function Connect4({ room, roomId, playerId, onLeave }: Connect4Props) {
     <div className="screen game-screen c4-screen">
       <div className="game-topbar">
         <button className="btn-back" onClick={onLeave}>✕</button>
-        <div className="turn-indicator" style={{ background: isMyTurn ? "rgba(76,175,80,.2)" : "rgba(0,0,0,.05)" }}>
+        <div className={`turn-indicator ${isMyTurn ? "mine" : "waiting"}`}>
           {isMyTurn ? "🟢 Ton tour !" : `⏳ Tour de ${(players[currentTurn % 2] || {}).name || "..."}`}
         </div>
         <div className="score-mini">
@@ -64,7 +64,7 @@ export function Connect4({ room, roomId, playerId, onLeave }: Connect4Props) {
                 <div
                   key={row}
                   className={`c4-cell ${board[row][col] ? "filled" : ""}`}
-                  style={{ background: board[row][col] ? COLORS_C4[(board[row][col] - 1) % 2] : "rgba(255,255,255,0.6)" }}
+                  style={board[row][col] ? { background: COLORS_C4[(board[row][col] - 1) % 2] } : undefined}
                 />
               ))}
             </div>
