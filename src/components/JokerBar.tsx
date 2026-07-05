@@ -6,11 +6,12 @@ interface JokerBarProps {
   counts: Record<string, number>;           // stock restant du joueur (par type)
   active?: string | null;                   // joker déjà activé pour cette manche
   disabled?: boolean;                       // ex. le joueur a déjà répondu
+  disabledTypes?: JokerType[];              // jokers momentanément indisponibles
   onUse: (type: JokerType) => void;
 }
 
 /** Barre de jokers partagée — pastilles tactiles, thème clair + sombre. */
-export function JokerBar({ types, counts, active, disabled, onUse }: JokerBarProps) {
+export function JokerBar({ types, counts, active, disabled, disabledTypes, onUse }: JokerBarProps) {
   return (
     <div className="joker-bar">
       {types.map((t) => {
@@ -18,7 +19,8 @@ export function JokerBar({ types, counts, active, disabled, onUse }: JokerBarPro
         const left = counts[t] ?? 0;
         const isActive = active === t;
         const spent = left <= 0;
-        const isDisabled = !!disabled || spent || (!!active && !isActive);
+        const momentarily = disabledTypes?.includes(t) ?? false;
+        const isDisabled = !!disabled || spent || momentarily || (!!active && !isActive);
         return (
           <motion.button
             key={t}

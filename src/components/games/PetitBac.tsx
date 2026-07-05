@@ -4,6 +4,12 @@ import { dbRef, update } from "../../lib/firebase";
 import type { Room } from "../../types";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { PB_CATEGORY_POOL, PB_LETTERS, pbStripAccents, pbAiAnswer } from "../../lib/petitBacData";
+import { JokerBar } from "../JokerBar";
+import { initJokers, jokerCount, type JokerType } from "../../lib/jokers";
+
+const PB_JOKERS: JokerType[] = ["double", "timeplus"];
+const PB_SPEED_BONUS = 5;   // ⚡ prime au premier joueur à finir (s'il a marqué)
+const PB_TIMEPLUS_MS = 8000;
 
 /* ══════════════════════════════════════════════════════════════════════════
    PETIT BAC (Baccalauréat) — party simultané (2–4 joueurs, chacun sur son écran)
@@ -124,6 +130,15 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     return pts;
   };
 
+  /* Gain total d'un joueur pour la manche : base + prime de vitesse ⚡ (1er à
+     finir) puis ×2 si le joker Double est actif. Déterministe → scoring = affichage. */
+  const jokerActiveMap = room.jokerActive || {};
+  const roundGain = (pid: string, base: number): number => {
+    let g = base + (pid === stopBy && base > 0 ? PB_SPEED_BONUS : 0);
+    if (jokerActiveMap[pid] === "double") g *= 2;
+    return g;
+  };
+
   /* Résultat détaillé d'une catégorie (pour l'affichage de la révélation). */
   const categoryResult = (ci: number) => {
     const norm: Record<string, string> = {};
@@ -197,7 +212,7 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     const rp = roundPoints();
     const newScores: Record<string, number> = { ...scores };
     players.forEach((p) => {
-      newScores[p.id] = (newScores[p.id] || 0) + (rp[p.id] || 0);
+      newScores[p.id] = (newScores[p.id] || 0) + roundGain(p.id, rp[p.id] || 0);
     });
     update(dbRef(`games/${roomId}`), { scores: newScores });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,6 +244,23 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     update(dbRef(`games/${roomId}`), payload);
   }, aiDelay);
 
+  /* ── Jokers (Double / Temps +) ── */
+  const myJokerActive = jokerActiveMap[playerId] || null;
+  const useJoker = (type: JokerType) => {
+    if (phase !== "fill" || iAmDone) return;
+    if (jokerCount(room.jokers, playerId, type) <= 0) return;
+    const upd: Record<string, unknown> = {
+      [`jokers/${playerId}/${type}`]: jokerCount(room.jokers, playerId, type) - 1,
+    };
+    if (type === "double") {
+      upd[`jokerActive/${playerId}`] = "double";
+    } else if (type === "timeplus") {
+      if (!stopAt) return;                       // n'a de sens que pendant la grâce
+      upd.pbStopAt = Math.max(stopAt, Date.now() + PB_TIMEPLUS_MS);
+    }
+    update(dbRef(`games/${roomId}`), upd);
+  };
+
   /* ══════════════════════════════════════════════════════════════════════
      ACTIONS HÔTE
      ════════════════════════════════════════════════════════════════════════ */
@@ -249,6 +281,8 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
       pbStopAt: null,
       pbUsedLetters: [l],
       scores: initScores(),
+      jokers: initJokers(players.map((p) => p.id), PB_JOKERS),
+      jokerActive: {},
     });
   };
 
@@ -265,6 +299,7 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
         pbStopBy: null,
         pbStopAt: null,
         pbUsedLetters: [...usedLetters, l],
+        jokerActive: {},
       });
     } else {
       const winner =
@@ -405,6 +440,15 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
               })}
             </div>
 
+            <JokerBar
+              types={PB_JOKERS}
+              counts={(room.jokers || {})[playerId] || {}}
+              active={myJokerActive}
+              disabledTypes={stopAt ? [] : ["timeplus"]}
+              onUse={useJoker}
+            />
+            <div className="pb-speed-hint">⚡ Le premier à finir gagne un bonus… s'il a bien répondu !</div>
+
             <div className="pb-fill-actions">
               <button className="pb-btn pb-btn-stop" onClick={submit}>
                 🛑 STOP — j'ai fini !
@@ -446,7 +490,9 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
           >
             <span className="pb-total-emoji">{p.emoji || "🙂"}</span>
             <span className="pb-total-name" style={{ color: p.color || "var(--text)" }}>{p.name}</span>
-            <span className="pb-total-round">+{rp[p.id] || 0}</span>
+            {p.id === stopBy && (rp[p.id] || 0) > 0 && <span className="pb-total-tag speed" title="Premier à finir">⚡</span>}
+            {jokerActiveMap[p.id] === "double" && <span className="pb-total-tag dbl" title="Joker Double">×2</span>}
+            <span className="pb-total-round">+{roundGain(p.id, rp[p.id] || 0)}</span>
             <span className="pb-total-sum">{scores[p.id] || 0} pts</span>
           </motion.div>
         ))}
@@ -610,6 +656,10 @@ const PB_CSS = `
 .pb-input::placeholder{color:var(--muted);opacity:.6;font-weight:700;}
 .pb-input-ok{color:var(--green);font-weight:900;font-size:1rem;}
 
+.pb-speed-hint{text-align:center;font-size:.76rem;color:var(--muted);margin:.5rem auto 0;max-width:560px;}
+.pb-total-tag{font-family:var(--font-d);font-size:.66rem;font-weight:900;padding:.02rem .3rem;border-radius:999px;margin-left:.15rem;}
+.pb-total-tag.speed{color:#c47d00;background:color-mix(in srgb,var(--warning,#ffbe42) 26%,transparent);}
+.pb-total-tag.dbl{color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,transparent);}
 .pb-fill-actions{max-width:560px;margin:.5rem auto 0;width:calc(100% - 1.6rem);display:flex;justify-content:center;}
 
 /* ── Carte « fini » ── */
