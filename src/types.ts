@@ -113,6 +113,7 @@ export interface Room {
   jpTotalRounds?: number;
   jpProduct?: JpProduct | null;
   jpAnswers?: Record<string, number>;
+  jpTimes?: Record<string, number>;              // submit timestamp (speed bonus)
   jpRevealed?: boolean;
   // Dessinez, c'est gagné
   dessinManche?: number;

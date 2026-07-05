@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { gameHistory } from "../../hooks/useGameHistory";
+import { JokerBar } from "../JokerBar";
+import { initJokers, jokerCount, speedBonus, type JokerType } from "../../lib/jokers";
 import type { Room, JpProduct } from "../../types";
+
+const JP_JOKERS: JokerType[] = ["double", "timeplus"];
+const JP_TIMEPLUS_SEC = 6;
 
 interface DummyJsonResponse {
   products: { id: number; title: string; price: number; thumbnail: string; category: string }[];
@@ -53,8 +58,11 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
   const totalRounds = room.jpTotalRounds ?? TOTAL_ROUNDS;
   const product    = room.jpProduct    ?? null;
   const jpAnswers  = room.jpAnswers    ?? {};
+  const jpTimes    = room.jpTimes      ?? {};
   const revealed   = room.jpRevealed   ?? false;
   const scores     = room.scores       ?? {};
+  const jokerActiveMap = room.jokerActive ?? {};
+  const myJokerActive = jokerActiveMap[playerId] || null;
 
   /* ── Fetch product (host only) ── */
   useEffect(() => {
@@ -62,6 +70,37 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
     didFetch.current = true;
     fetchProduct();
   }, [isHost, product]);
+
+  /* ── Host initialise le stock de jokers au tout début ── */
+  useEffect(() => {
+    if (!isHost || room.jokers) return;
+    update(dbRef(`games/${roomId}`), { jokers: initJokers(players.map(p => p.id), JP_JOKERS), jokerActive: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, room.jokers]);
+
+  /* Gains de la manche = proximité (10, +25 exact) + vitesse ⚡ (+3/+2/+1 aux
+     plus rapides), le tout ×2 si le joker Double est actif. Déterministe →
+     sert au scoring ET à l'affichage de la révélation. */
+  const computeGains = (): Record<string, number> => {
+    const entries = players.map(p => ({
+      id: p.id,
+      diff: jpAnswers[p.id] !== undefined && product ? Math.abs(jpAnswers[p.id] - product.price) : Infinity,
+    }));
+    const minDiff = Math.min(...entries.map(e => e.diff));
+    const submitters = players
+      .filter(p => jpAnswers[p.id] !== undefined)
+      .sort((a, b) => (jpTimes[a.id] ?? Infinity) - (jpTimes[b.id] ?? Infinity))
+      .map(p => p.id);
+    const gains: Record<string, number> = {};
+    entries.forEach(({ id, diff }) => {
+      let g = 0;
+      if (diff === minDiff && diff !== Infinity) { g += 10; if (diff === 0) g += 25; }
+      g += speedBonus(submitters.indexOf(id));
+      if (jokerActiveMap[id] === "double") g *= 2;
+      gains[id] = g;
+    });
+    return gains;
+  };
 
   /* ── Reset per round ── */
   useEffect(() => {
@@ -128,25 +167,28 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
     const val = parseFloat(guess.replace(",", "."));
     if (isNaN(val) || val < 0) return;
     setSubmitted(true);
-    update(dbRef(`games/${roomId}`), { [`jpAnswers/${playerId}`]: val });
+    // jpTimes drives the ⚡ speed bonus (fastest submitters ranked at reveal).
+    update(dbRef(`games/${roomId}`), { [`jpAnswers/${playerId}`]: val, [`jpTimes/${playerId}`]: Date.now() });
+  };
+
+  /* ── Joker (Double / Temps +) ── */
+  const useJoker = (type: JokerType) => {
+    if (submitted || revealed || !product) return;
+    if (jokerCount(room.jokers, playerId, type) <= 0) return;
+    const upd: Record<string, unknown> = {
+      [`jokers/${playerId}/${type}`]: jokerCount(room.jokers, playerId, type) - 1,
+    };
+    if (type === "double") upd[`jokerActive/${playerId}`] = "double";
+    else if (type === "timeplus") setTimeLeft(t => t + JP_TIMEPLUS_SEC);
+    update(dbRef(`games/${roomId}`), upd);
   };
 
   const handleNextRound = async () => {
     if (!product) return;
-    /* Award points */
+    /* Award points: closeness + ⚡ speed + ×2 joker (shared calculator). */
+    const gains = computeGains();
     const newScores = { ...scores };
-    const entries = players.map(p => ({
-      p, diff: jpAnswers[p.id] !== undefined
-        ? Math.abs(jpAnswers[p.id] - product.price)
-        : Infinity,
-    }));
-    const minDiff = Math.min(...entries.map(e => e.diff));
-    entries.forEach(({ p, diff }) => {
-      if (diff === minDiff && diff !== Infinity) {
-        newScores[p.id] = (newScores[p.id] || 0) + 10;
-        if (diff === 0) newScores[p.id] += 25; // Bonus: exact!
-      }
-    });
+    players.forEach(p => { newScores[p.id] = (newScores[p.id] || 0) + (gains[p.id] || 0); });
     /* History */
     jpHistory.saveSession([String(product.id)]);
     const nextRound = round + 1;
@@ -155,7 +197,7 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
       await update(dbRef(`games/${roomId}`), { scores: newScores, status: "finished", winner, jpRound: nextRound });
     } else {
       await update(dbRef(`games/${roomId}`), {
-        scores: newScores, jpRound: nextRound, jpProduct: null, jpRevealed: false, jpAnswers: {},
+        scores: newScores, jpRound: nextRound, jpProduct: null, jpRevealed: false, jpAnswers: {}, jpTimes: {}, jokerActive: {},
       });
     }
   };
@@ -270,21 +312,31 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
               </div>
             </div>
           ) : (
-            <div className="jp-input-row">
-              <span className="jp-euro">€</span>
-              <input
-                type="number"
-                className="jp-input"
-                placeholder="Prix estimé…"
-                value={guess}
-                onChange={e => setGuess(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                min="0" step="0.01" autoFocus
-              />
-              <button className="btn btn-primary jp-submit-btn" onClick={handleSubmit} disabled={!guess}>
-                →
-              </button>
-            </div>
+            <>
+              <div className="jp-input-row">
+                <span className="jp-euro">€</span>
+                <input
+                  type="number"
+                  className="jp-input"
+                  placeholder="Prix estimé…"
+                  value={guess}
+                  onChange={e => setGuess(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                  min="0" step="0.01" autoFocus
+                />
+                <button className="btn btn-primary jp-submit-btn" onClick={handleSubmit} disabled={!guess}>
+                  →
+                </button>
+              </div>
+              <div style={{ marginTop: ".7rem" }}>
+                <JokerBar
+                  types={JP_JOKERS}
+                  counts={(room.jokers || {})[playerId] || {}}
+                  active={myJokerActive}
+                  onUse={useJoker}
+                />
+              </div>
+            </>
           )}
         </motion.div>
       ) : (
@@ -302,6 +354,10 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
               const sorted = revealEntries.slice().sort((a, b) => a.diff - b.diff);
               const finite = sorted.filter(e => e.diff !== Infinity).map(e => e.diff);
               const maxDiff = finite.length ? Math.max(...finite, 0.0001) : 1;
+              const gains = computeGains();
+              const fastestId = players
+                .filter(p => jpAnswers[p.id] !== undefined)
+                .sort((a, b) => (jpTimes[a.id] ?? Infinity) - (jpTimes[b.id] ?? Infinity))[0]?.id;
               return sorted.map(({ p, val, diff }, i) => {
                 const isWinner = diff === minDiff && diff !== Infinity;
                 const isPerfect = diff === 0;
@@ -338,7 +394,12 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
                       <>
                         <span className="jp-r-guess">{val.toFixed(2)} €</span>
                         <span className="jp-r-diff">
-                          {isPerfect ? "🎯 Parfait ! +35pts" : isWinner ? `✨ ±${diff.toFixed(2)} € +10pts` : `±${diff.toFixed(2)} €`}
+                          {isPerfect ? "🎯 Parfait !" : isWinner ? `✨ ±${diff.toFixed(2)} €` : `±${diff.toFixed(2)} €`}
+                          {(gains[p.id] || 0) > 0 && (
+                            <span className="jp-r-gain">
+                              +{gains[p.id]}{p.id === fastestId ? " ⚡" : ""}{jokerActiveMap[p.id] === "double" ? " ×2" : ""}
+                            </span>
+                          )}
                         </span>
                       </>
                     ) : (
@@ -403,6 +464,9 @@ const JP_CSS = `
   will-change: transform;
 }
 .jp-result-row { position: relative; overflow: hidden; }
+.jp-r-gain{display:inline-block;margin-left:.4rem;font-family:var(--font-d);font-size:.8rem;
+  color:var(--green);background:color-mix(in srgb,var(--green) 16%,transparent);
+  padding:.02rem .4rem;border-radius:999px;white-space:nowrap;}
 .jp-closeness-track {
   position: absolute; left: 0; bottom: 0; height: 3px; width: 100%;
   background: transparent; pointer-events: none;
