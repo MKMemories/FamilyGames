@@ -44,12 +44,17 @@ export interface JpProduct {
 /* ── Dessinez, c'est gagné ───────────────── */
 export interface DrawPoint { x: number; y: number; }
 
+export type DrawTool = "pen" | "marker" | "line" | "rect" | "ellipse" | "arrow" | "eraser";
+
 export interface DrawPath {
   id: string;
-  points: DrawPoint[];
+  points: DrawPoint[];      // pen/marker/eraser: full trail ; shapes: [start, end]
   color: string;
-  size: number;
-  eraser: boolean;
+  size: number;             // effective line width (already includes tool scaling)
+  eraser: boolean;          // legacy flag, kept in sync with tool === "eraser"
+  tool?: DrawTool;
+  opacity?: number;         // marker / highlighter blending
+  fill?: boolean;           // filled rectangle / ellipse
 }
 
 export interface DessinGuessEntry {

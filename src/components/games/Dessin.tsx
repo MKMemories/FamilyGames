@@ -124,12 +124,17 @@ export function Dessin({ room, roomId, playerId, isHost, isSolo, onLeave }: Dess
   const handleStrokeComplete = async (path: DrawPath) => {
     const current = Array.isArray(room.dessinPaths) ? room.dessinPaths : [];
     await update(dbRef(`games/${roomId}`), {
-      dessinPaths: [...current, path].slice(-60),
+      dessinPaths: [...current, path].slice(-140),
     });
   };
 
   const handleClear = async () => {
     await update(dbRef(`games/${roomId}`), { dessinPaths: [] });
+  };
+
+  const handleUndo = async () => {
+    const current = Array.isArray(room.dessinPaths) ? room.dessinPaths : [];
+    await update(dbRef(`games/${roomId}`), { dessinPaths: current.slice(0, -1) });
   };
 
   /* ── Guess submission ── */
@@ -345,6 +350,7 @@ export function Dessin({ room, roomId, playerId, isHost, isSolo, onLeave }: Dess
         isDrawer={amIDrawer || isSolo}
         onStrokeComplete={handleStrokeComplete}
         onClear={handleClear}
+        onUndo={handleUndo}
       />
 
       {/* Round result overlay */}
