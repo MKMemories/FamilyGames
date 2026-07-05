@@ -19,6 +19,10 @@ import { Imposteur } from "./components/games/Imposteur";
 import { QuiDeNous } from "./components/games/QuiDeNous";
 import { BatailleNavale } from "./components/games/BatailleNavale";
 import { Morpion } from "./components/games/Morpion";
+import { PetitBac } from "./components/games/PetitBac";
+import { Bombe } from "./components/games/Bombe";
+import { Des } from "./components/games/Des";
+import { Blokus } from "./components/games/Blokus";
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { useTheme } from "./hooks/useTheme";
@@ -292,6 +296,18 @@ function App() {
           )}
           {game === "morpion" && (
             <Morpion room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "petitbac" && (
+            <PetitBac room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "bombe" && (
+            <Bombe room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "des" && (
+            <Des room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {game === "blokus" && (
+            <Blokus room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
         </>
       )}

@@ -3,7 +3,7 @@ import type { Game, MemberPreset, GameId, Difficulty, StoredQuizQuestion } from 
 /* ── Solo vs Ordinateur ── */
 export const AI_ID = "zzz-ai";
 export const AI_PLAYER = { id: AI_ID, name: "Ordinateur", color: "#8b93a7", emoji: "🤖" };
-export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille"]);
+export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus"]);
 export function gameSupportsAI(g: GameId): boolean { return AI_GAMES.has(g); }
 export const DIFFICULTIES: { id: Difficulty; label: string; emoji: string; desc: string }[] = [
   { id: "facile", label: "Facile", emoji: "🙂", desc: "L'ordinateur joue simplement" },
@@ -32,6 +32,10 @@ export const GAMES: Game[] = [
   { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#3b82f6" },
   { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6" },
   { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8" },
+  { id: "petitbac", name: "Petit Bac", emoji: "🅰️", desc: "Une lettre, des catégories — remplis plus vite que les autres", min: 2, max: 4, color: "#0ea5e9" },
+  { id: "bombe", name: "Mot Bombe", emoji: "💣", desc: "Trouve un mot avec la syllabe avant que la bombe explose !", min: 2, max: 4, color: "#f97316" },
+  { id: "des", name: "Bluff des Dés", emoji: "🎲", desc: "Mise, bluffe et démasque les menteurs", min: 2, max: 4, color: "#a855f7" },
+  { id: "blokus", name: "Territoires", emoji: "🧩", desc: "Pose tes pièces, bloque les autres, conquiers le plateau", min: 2, max: 4, color: "#0d9488" },
 ];
 
 /* ── L'Imposteur : paires de mots (civil / imposteur, proches mais différents) ── */
@@ -303,6 +307,10 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "quidenous") return { qdnPhase: null, qdnRound: 0, qdnTotalRounds: 8, qdnUsed: [], qdnVotes: {} };
   if (game === "bataille") return { bnPhase: "place", bnGrids: {}, bnReady: {}, bnShots: {}, bnTurn: "", bnWinner: "" };
   if (game === "morpion") return { mpCells: Array(9).fill(""), mpTurn: "", mpWinner: "", mpLine: [] };
+  if (game === "petitbac") return { pbPhase: null, pbRound: 0, pbTotalRounds: 5, pbUsedLetters: [], pbAnswers: {}, pbDone: {}, pbStopBy: null, pbStopAt: null };
+  if (game === "bombe") return { bmbPhase: null, bmbLives: {}, bmbUsedWords: [], bmbUsedSyllables: [], bmbRoundId: 0, bmbOrder: [] };
+  if (game === "des") return { dsPhase: null, dsDice: {}, dsCounts: {}, dsBid: null, dsRoundId: 0, dsOrder: [], dsReveal: null };
+  if (game === "blokus") return { blkBoard: null, blkTurn: 0, blkOrder: [], blkRemaining: {}, blkPassed: {} };
   return {};
 }
 

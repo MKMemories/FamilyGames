@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus";
 
 export interface MemberPreset {
   name: string;
@@ -147,6 +147,46 @@ export interface Room {
   mpTurn?: string;
   mpWinner?: string;
   mpLine?: number[];
+  // Petit Bac
+  pbPhase?: "fill" | "reveal" | null;
+  pbRound?: number;
+  pbTotalRounds?: number;
+  pbLetter?: string;
+  pbCategories?: string[];
+  pbAnswers?: Record<string, Record<string, string>>;   // pbAnswers/<pid>/<catIdx>
+  pbDone?: Record<string, boolean>;                      // pbDone/<pid>
+  pbUsedLetters?: string[];
+  pbStopBy?: string | null;                              // who pressed STOP first
+  pbStopAt?: number | null;                              // ms deadline once STOP pressed
+  // La Bombe (mot chaud)
+  bmbPhase?: "play" | "over" | null;
+  bmbSyllable?: string;
+  bmbHolder?: string;                                    // playerId whose turn it is
+  bmbLives?: Record<string, number>;
+  bmbUsedWords?: string[];
+  bmbUsedSyllables?: string[];
+  bmbRoundId?: number;                                   // bumps each pass → resets fuse
+  bmbOrder?: string[];                                   // active turn order
+  bmbLastWord?: string;
+  bmbLastBy?: string;
+  bmbFuseMs?: number;                                    // fuse duration for the current holder
+  // Bluff des Dés
+  dsPhase?: "bid" | "reveal" | "over" | null;
+  dsDice?: Record<string, number[]>;                    // hidden per player, revealed on challenge
+  dsCounts?: Record<string, number>;                    // dice remaining
+  dsBid?: { qty: number; face: number; by: string } | null;
+  dsTurn?: string;
+  dsOrder?: string[];
+  dsReveal?: { face: number; qty: number; actual: number; loser: string; bidder: string; caller: string } | null;
+  dsRoundId?: number;
+  // Territoires (Blokus-like)
+  blkBoard?: number[][] | null;                         // 0 empty, else playerIndex+1
+  blkTurn?: number;                                     // index into blkOrder
+  blkOrder?: string[];
+  blkRemaining?: Record<string, number[]>;              // piece ids still in hand
+  blkPassed?: Record<string, boolean>;
+  blkLastCells?: [number, number][];
+  blkSize?: number;
 }
 
 export interface AppState {
