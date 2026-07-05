@@ -1,11 +1,14 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { DEFIS } from "../../lib/gameData";
+import { JokerBar } from "../JokerBar";
+import { initJokers, jokerCount, type JokerType } from "../../lib/jokers";
 import type { Room } from "../../types";
 
 const TYPE_ICONS: Record<string, string> = { group: "👥", solo: "🎭", duo: "👫" };
 const TYPE_LABELS: Record<string, string> = { group: "Tout le monde", duo: "En duo", solo: "Solo" };
+const DEFI_JOKERS: JokerType[] = ["double"];
 
 interface DefiProps {
   room: Room;
@@ -24,13 +27,32 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
   const timerLeft = room.timerLeft !== undefined ? room.timerLeft : defi.timer;
   const running = room.timerRunning || false;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const jokerActiveMap = room.jokerActive || {};
+  const myJokerActive = jokerActiveMap[playerId] || null;
+
+  /* Host seeds the joker inventory once (1 × "Double" per player per game). */
+  useEffect(() => {
+    if (!isHost || room.jokers) return;
+    update(dbRef(`games/${roomId}`), { jokers: initJokers(players.map(p => p.id), DEFI_JOKERS), jokerActive: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, room.jokers]);
+
+  /* Arm the ×2 joker: the player's NEXT awarded points this challenge double. */
+  const useJoker = (type: JokerType) => {
+    if (type !== "double" || myJokerActive) return;
+    if (jokerCount(room.jokers, playerId, type) <= 0) return;
+    update(dbRef(`games/${roomId}`), {
+      [`jokers/${playerId}/${type}`]: jokerCount(room.jokers, playerId, type) - 1,
+      [`jokerActive/${playerId}`]: "double",
+    });
+  };
 
   // Transient UI only: floating "+10" bursts when a point is awarded.
-  const [bursts, setBursts] = useState<{ id: number; pid: string }[]>([]);
+  const [bursts, setBursts] = useState<{ id: number; pid: string; gain: number }[]>([]);
   const burstSeq = useRef(0);
-  const triggerBurst = (pid: string) => {
+  const triggerBurst = (pid: string, gain: number) => {
     const id = ++burstSeq.current;
-    setBursts(b => [...b, { id, pid }]);
+    setBursts(b => [...b, { id, pid, gain }]);
     setTimeout(() => setBursts(b => b.filter(x => x.id !== id)), 950);
   };
 
@@ -55,8 +77,12 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
   };
 
   const addPoints = (pid: string) => {
-    const newScores = { ...(room.scores || {}), [pid]: ((room.scores || {})[pid] || 0) + 10 };
-    update(dbRef(`games/${roomId}`), { scores: newScores });
+    const doubled = jokerActiveMap[pid] === "double";
+    const gain = doubled ? 20 : 10;
+    const newScores = { ...(room.scores || {}), [pid]: ((room.scores || {})[pid] || 0) + gain };
+    const upd: Record<string, unknown> = { scores: newScores };
+    if (doubled) upd[`jokerActive/${pid}`] = null; // consommé une fois
+    update(dbRef(`games/${roomId}`), upd);
   };
 
   const nextDefi = () => {
@@ -68,7 +94,7 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
       const winner = players.sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0))[0]?.name || "?";
       update(dbRef(`games/${roomId}`), { status: "finished", winner, defiIdx: next });
     } else {
-      update(dbRef(`games/${roomId}`), { defiIdx: next, timerRunning: false, timerLeft: nextDefiItem.timer });
+      update(dbRef(`games/${roomId}`), { defiIdx: next, timerRunning: false, timerLeft: nextDefiItem.timer, jokerActive: {} });
     }
   };
 
@@ -183,18 +209,33 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
         </motion.div>
       </AnimatePresence>
 
+      {/* Joker ×2 du joueur local : arme le prochain gain de ce défi */}
+      {!room.winner && (
+        <div className="defi-joker-zone">
+          <JokerBar
+            types={DEFI_JOKERS}
+            counts={(room.jokers || {})[playerId] || {}}
+            active={myJokerActive}
+            onUse={useJoker}
+          />
+          {myJokerActive === "double" && <div className="defi-joker-hint">×2 armé — ton prochain point compte double !</div>}
+        </div>
+      )}
+
       <div className="defi-score-btns">
-        {players.map(p => (
+        {players.map(p => {
+          const armed = jokerActiveMap[p.id] === "double";
+          return (
           <motion.button
             key={p.id}
-            className="btn btn-score"
+            className={`btn btn-score ${armed ? "armed" : ""}`}
             style={{ borderColor: p.color || "#ccc", position: "relative" }}
-            onClick={() => { addPoints(p.id); triggerBurst(p.id); }}
+            onClick={() => { triggerBurst(p.id, armed ? 20 : 10); addPoints(p.id); }}
             whileTap={{ scale: 0.9 }}
             whileHover={{ y: -2 }}
             transition={{ type: "spring", stiffness: 500, damping: 20 }}
           >
-            +10 pts {p.name}
+            +{armed ? 20 : 10} pts {p.name}{armed ? " ×2" : ""}
             <AnimatePresence>
               {bursts.filter(b => b.pid === p.id).map(b => (
                 <motion.span
@@ -206,12 +247,13 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.9, ease: "easeOut" }}
                 >
-                  +10
+                  +{b.gain}
                 </motion.span>
               ))}
             </AnimatePresence>
           </motion.button>
-        ))}
+          );
+        })}
       </div>
 
       {isHost && (
@@ -277,4 +319,10 @@ const DEFI_CSS = `
     inset 0 1px 0 rgba(255,255,255,.45);
 }
 .defi-illus-emoji { font-size: 2.7rem; line-height: 1; filter: drop-shadow(0 3px 5px rgba(0,0,0,.2)); }
+.defi-joker-zone { display: flex; flex-direction: column; align-items: center; gap: .35rem; margin: .2rem 0 .5rem; }
+.defi-joker-hint { font-size: .74rem; font-weight: 800; color: var(--accent); }
+.btn-score.armed {
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), .3);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface-1)), var(--surface-1));
+}
 `;
