@@ -1,17 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { LETTER_VALS } from "../../lib/gameData";
+import { loadFrenchDict, isValidWord, suggestFromRack } from "../../lib/frenchDict";
 import type { Room } from "../../types";
-
-interface WiktionaryPage {
-  pageid?: number;
-  title: string;
-  missing?: string;
-}
-interface WiktionaryResponse {
-  query: { pages: Record<string, WiktionaryPage> };
-}
 
 interface ScrabbleProps {
   room: Room;
@@ -24,9 +16,11 @@ interface ScrabbleProps {
 }
 
 export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }: ScrabbleProps) {
-  const [isChecking, setIsChecking] = useState(false);
   // Purely-visual transient celebration (no game logic, no Firebase).
   const [celebrate, setCelebrate] = useState<{ word: string; pts: number } | null>(null);
+  // Dictionnaire français local (chargé une fois) → validation instantanée.
+  const [dict, setDict] = useState<Set<string> | null>(null);
+  useEffect(() => { loadFrenchDict().then(setDict); }, []);
 
   const players = Object.values(room.players || {});
   const currentTurn = room.currentTurn || 0;
@@ -35,6 +29,10 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   const roundWord = room.roundWord || "";
   const selectedTiles = (room.selectedTiles || []) as number[];
   const passedTurn = room.passedTurn || {};
+
+  const dictReady = !!dict && dict.size > 0;
+  const showValidity = roundWord.length >= 2 && dictReady;
+  const wordValid = roundWord.length >= 2 && isValidWord(dict, roundWord);
 
   const handleTile = (idx: number) => {
     if (!isMyTurn || room.winner) return;
@@ -57,22 +55,11 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     const word = roundWord.toUpperCase();
     if (word.length < 2) { onToast("Mot trop court !"); return; }
 
-    setIsChecking(true);
-    try {
-      const res = await fetch(
-        `https://fr.wiktionary.org/w/api.php?action=query&titles=${word.toLowerCase()}&format=json&origin=*`
-      );
-      const data: WiktionaryResponse = await res.json();
-      const pages = data?.query?.pages || {};
-      if (Object.keys(pages)[0] === "-1") {
-        onToast(`"${word}" n'existe pas dans le dictionnaire !`);
-        setIsChecking(false);
-        return;
-      }
-    } catch {
-      // API unavailable: allow the word anyway
+    // Vérification instantanée contre le dictionnaire français local.
+    if (!isValidWord(dict, word)) {
+      onToast(`« ${word} » n'est pas dans le dictionnaire !`);
+      return;
     }
-    setIsChecking(false);
 
     const pts = word.split("").reduce((s, l) => s + (LETTER_VALS[l] || 0), 0);
     // Visual-only flourish; does not affect scoring or Firebase.
@@ -120,6 +107,21 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
 
   const clear = () => {
     update(dbRef(`games/${roomId}`), { roundWord: "", selectedTiles: [] });
+  };
+
+  /* 💡 Aide : l'ordinateur propose un mot valide du chevalet, contre -5 pts. */
+  const useHint = () => {
+    if (!isMyTurn || room.winner) return;
+    if (!dictReady) { onToast("Dictionnaire en cours de chargement…"); return; }
+    const sug = suggestFromRack(dict, rack, LETTER_VALS);
+    if (!sug) { onToast("Aucun mot possible avec ces lettres 😅"); return; }
+    const prev = (room.scores || {})[playerId] || 0;
+    update(dbRef(`games/${roomId}`), {
+      roundWord: sug.word,
+      selectedTiles: sug.indices,
+      scores: { ...(room.scores || {}), [playerId]: prev - 5 },
+    });
+    onToast(`💡 -5 pts — essaie « ${sug.word} »`);
   };
 
   const swapOneLetter = (idx: number) => {
@@ -214,7 +216,7 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
           )}
         </AnimatePresence>
 
-        <motion.div className="scrabble-word-display" layout>
+        <motion.div className={`scrabble-word-display ${showValidity ? (wordValid ? "sc-valid" : "sc-invalid") : ""}`} layout>
           {roundWord ? (
             <AnimatePresence mode="popLayout" initial={false}>
               {roundWord.split("").map((l, i) => (
@@ -236,6 +238,15 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
             <span style={{ color: "var(--muted)" }}>Sélectionne des lettres…</span>
           )}
         </motion.div>
+
+        {/* Indicateur de validité (coloriage rouge / vert instantané) */}
+        <div className="sc-word-status-slot">
+          {showValidity && (
+            <span className={`sc-word-status ${wordValid ? "ok" : "no"}`}>
+              {wordValid ? "✓ Mot valide" : "✗ Pas dans le dictionnaire"}
+            </span>
+          )}
+        </div>
 
         {isMyTurn && !room.winner && (
           <div className="rack-swap-row">
@@ -290,11 +301,12 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
               <button
                 className="btn btn-primary"
                 onClick={playWord}
-                disabled={isChecking || roundWord.length < 2}
+                disabled={roundWord.length < 2 || (showValidity && !wordValid)}
               >
-                {isChecking ? "⏳ Vérification…" : "✅ Valider"}
+                ✅ Valider
               </button>
-              <button className="btn btn-ghost" onClick={skip}>⏭ Passer mon tour</button>
+              <button className="btn btn-ghost" onClick={useHint} title="L'ordinateur propose un mot (-5 pts)">💡 Indice (-5)</button>
+              <button className="btn btn-ghost" onClick={skip}>⏭ Passer</button>
               <button className="btn btn-ghost" onClick={clear}>🔄 Effacer</button>
             </div>
             <div style={{ textAlign: "center", marginTop: ".4rem" }}>
@@ -368,6 +380,20 @@ const SCRABBLE_CSS = `
     0 6px 18px rgba(20,50,30,.35);
 }
 .scrabble-zone .scrabble-word-display > span { color: rgba(255,255,255,.6) !important; }
+
+/* ── Validation dictionnaire : anneau vert (valide) / rouge (invalide) ── */
+.scrabble-zone .scrabble-word-display.sc-valid {
+  box-shadow: inset 0 2px 10px rgba(0,0,0,.5), 0 0 0 2px #37d67a, 0 6px 20px rgba(45,190,110,.4);
+}
+.scrabble-zone .scrabble-word-display.sc-invalid {
+  box-shadow: inset 0 2px 10px rgba(0,0,0,.5), 0 0 0 2px #ff5a6a, 0 6px 20px rgba(220,60,80,.38);
+}
+.scrabble-zone .scrabble-word-display.sc-valid .placed-tile { color: #1e7a44; }
+.scrabble-zone .scrabble-word-display.sc-invalid .placed-tile { color: #b8202f; }
+.sc-word-status-slot { min-height: 22px; text-align: center; margin: .35rem 0 .1rem; }
+.sc-word-status { display: inline-block; font-size: .82rem; font-weight: 900; padding: .12rem .7rem; border-radius: 999px; }
+.sc-word-status.ok { color: var(--green); background: color-mix(in srgb, var(--green) 16%, transparent); }
+.sc-word-status.no { color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, transparent); }
 
 /* ── Shared tile surface: ivory with a subtle vertical wood grain, bevel ── */
 .scrabble-zone .rack-tile,
