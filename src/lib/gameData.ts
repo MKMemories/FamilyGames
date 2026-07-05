@@ -295,7 +295,7 @@ export function getInitData(game: GameId): Record<string, any> {
     const deck = DEFIS.map((_, i) => i).sort(() => Math.random() - 0.5); // shuffle → no repeats in a game
     return { defiIdx: 0, defiDeck: deck, timerLeft: DEFIS[deck[0]].timer, timerRunning: false };
   }
-  if (game === "justeprix") return { jpRound: 0, jpTotalRounds: 3, jpProduct: null, jpAnswers: {}, jpRevealed: false };
+  if (game === "justeprix") return { jpRound: 0, jpTotalRounds: 10, jpProduct: null, jpAnswers: {}, jpRevealed: false };
   if (game === "dessin") return { dessinManche: 0, dessinTotalManches: 0, dessinMot: null, dessinDessinateur: null, dessinPaths: [], dessinCorrectGuesser: null, dessinRoundActive: false, dessinGuessChat: [] };
   if (game === "scrabble") { const bag = buildBag(); return { bag, racks: {}, currentTurn: 0, roundWord: "", selectedTiles: [], wordHistory: [] }; }
   if (game === "chronovore") return {};

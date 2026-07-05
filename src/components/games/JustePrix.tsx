@@ -9,7 +9,7 @@ interface DummyJsonResponse {
 }
 
 const TIMER_SEC   = 15;
-const TOTAL_ROUNDS = 3;
+const TOTAL_ROUNDS = 10;
 const jpHistory   = gameHistory("justeprix");
 
 const FALLBACK_PRODUCTS: JpProduct[] = [
@@ -19,6 +19,16 @@ const FALLBACK_PRODUCTS: JpProduct[] = [
   { id: 9004, title: "Cafetière expresso automatique", price: 129.99, thumbnail: "", category: "Cuisine" },
   { id: 9005, title: "Tapis de yoga antidérapant",     price: 34.99,  thumbnail: "", category: "Sport" },
   { id: 9006, title: "Lampe de bureau LED flexible",   price: 24.99,  thumbnail: "", category: "Maison" },
+  { id: 9007, title: "Casque audio à réduction de bruit", price: 249.00, thumbnail: "", category: "Électronique" },
+  { id: 9008, title: "Robot aspirateur connecté",      price: 349.99, thumbnail: "", category: "Maison" },
+  { id: 9009, title: "Paire de baskets de running",    price: 89.90,  thumbnail: "", category: "Sport" },
+  { id: 9010, title: "Grille-pain 4 tranches inox",    price: 44.99,  thumbnail: "", category: "Cuisine" },
+  { id: 9011, title: "Sac à dos de randonnée 40L",     price: 74.99,  thumbnail: "", category: "Sport" },
+  { id: 9012, title: "Enceinte portable étanche",      price: 59.99,  thumbnail: "", category: "Électronique" },
+  { id: 9013, title: "Set de 12 verres à eau",         price: 19.99,  thumbnail: "", category: "Cuisine" },
+  { id: 9014, title: "Ventilateur sur pied silencieux",price: 39.99,  thumbnail: "", category: "Maison" },
+  { id: 9015, title: "Trottinette électrique pliable", price: 399.00, thumbnail: "", category: "Mobilité" },
+  { id: 9016, title: "Parapluie tempête automatique",  price: 22.50,  thumbnail: "", category: "Accessoires" },
 ];
 
 interface JustePrixProps {
@@ -118,7 +128,7 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
     const val = parseFloat(guess.replace(",", "."));
     if (isNaN(val) || val < 0) return;
     setSubmitted(true);
-    update(dbRef(`games/${roomId}`), { jpAnswers: { ...jpAnswers, [playerId]: val } });
+    update(dbRef(`games/${roomId}`), { [`jpAnswers/${playerId}`]: val });
   };
 
   const handleNextRound = async () => {

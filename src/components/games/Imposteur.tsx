@@ -102,7 +102,7 @@ export function Imposteur({ room, roomId, playerId, isHost, isSolo, onLeave, onT
   /* Marque le mot comme vu (première révélation seulement). */
   const markSeen = () => {
     if (seen[playerId]) return;
-    update(dbRef(gamePath), { impSeen: { ...seen, [playerId]: true } });
+    update(dbRef(gamePath), { [`impSeen/${playerId}`]: true });
   };
 
   const goToVote = () => {
@@ -114,7 +114,7 @@ export function Imposteur({ room, roomId, playerId, isHost, isSolo, onLeave, onT
     if (phase !== "vote") return;
     if (targetId === playerId) return; // pas de vote pour soi-même
     if (votes[playerId] === targetId) return; // pas de doublon inutile
-    update(dbRef(gamePath), { impVotes: { ...votes, [playerId]: targetId } });
+    update(dbRef(gamePath), { [`impVotes/${playerId}`]: targetId });
   };
 
   /* Calcule le tally + désigne le plus voté (null si égalité). */

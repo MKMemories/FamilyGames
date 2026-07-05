@@ -187,6 +187,7 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   const [isLoadingQ, setIsLoadingQ] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const [shuffledOpts, setShuffledOpts] = useState<string[]>([]);
+  const [pendingAnswer, setPendingAnswer] = useState<string | null>(null); // optimistic local pick
   const didFetch = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -196,7 +197,9 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   const total = questions.length || 10;
   const currentQ: StoredQuizQuestion | null = questions[qIdx] ?? null;
   const quizAnswers = room.quizAnswers || {};
-  const myAnswer = quizAnswers[playerId];
+  // Prefer the authoritative answer; fall back to the optimistic local pick so
+  // the button highlights instantly (no waiting on the Firebase round-trip).
+  const myAnswer = quizAnswers[playerId] !== undefined ? quizAnswers[playerId] : (pendingAnswer ?? undefined);
   const revealed = room.revealed || false;
   const pct = total > 0 ? Math.round(qIdx / total * 100) : 0;
 
@@ -266,6 +269,18 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
     }
   }, [qIdx, room.quizOptions]);
 
+  /* Clear the optimistic pick when the question changes. */
+  useEffect(() => { setPendingAnswer(null); }, [qIdx]);
+
+  /* ── Host reveals once EVERY player has answered (authoritative state) ── */
+  useEffect(() => {
+    if (!isHost || revealed || !currentQ) return;
+    const answered = room.quizAnswers || {};
+    if (players.length > 0 && players.every(p => answered[p.id] !== undefined)) {
+      update(dbRef(`games/${roomId}`), { revealed: true });
+    }
+  }, [room.quizAnswers, isHost, revealed, currentQ?.question]);
+
   /* ── Countdown timer ── */
   useEffect(() => {
     if (!currentQ || revealed || myAnswer !== undefined) {
@@ -284,12 +299,11 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
 
   const handleAnswer = (chosen: string) => {
     if (myAnswer !== undefined || revealed || !currentQ) return;
-    const newAnswered = { ...quizAnswers, [playerId]: chosen };
-    const newScores = { ...(room.scores || {}) };
-    if (chosen === currentQ.answer) newScores[playerId] = (newScores[playerId] || 0) + 10;
-    const allAnswered = players.every(p => newAnswered[p.id] !== undefined);
-    const upd: any = { quizAnswers: newAnswered, scores: newScores };
-    if (allAnswered || isSolo) upd.revealed = true;
+    setPendingAnswer(chosen); // optimistic — instant highlight
+    // Write to PER-PLAYER paths so simultaneous answers never clobber each other.
+    const upd: Record<string, unknown> = { [`quizAnswers/${playerId}`]: chosen };
+    if (chosen === currentQ.answer) upd[`scores/${playerId}`] = ((room.scores || {})[playerId] || 0) + 10;
+    if (isSolo) upd.revealed = true;
     update(dbRef(`games/${roomId}`), upd);
   };
 

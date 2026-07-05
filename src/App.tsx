@@ -54,8 +54,13 @@ function App() {
       if (!room) return;
       setState(s => {
         let nextScreen = s.screen;
-        if (s.screen === "lobby" && room.status === "playing") nextScreen = "game";
-        else if ((s.screen === "game" || s.screen === "lobby") && room.status === "finished") nextScreen = "result";
+        // Follow the room status from ANY in-game screen (incl. "result"), so
+        // restarts move everyone lobby↔game↔result together — no stuck clients.
+        if (s.screen === "lobby" || s.screen === "game" || s.screen === "result") {
+          if (room.status === "playing") nextScreen = "game";
+          else if (room.status === "finished") nextScreen = "result";
+          else if (room.status === "lobby") nextScreen = "lobby";
+        }
         return { ...s, room, screen: nextScreen };
       });
     });

@@ -79,10 +79,15 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
 
   /* ── État UI transitoire uniquement ── */
   const [chosenRounds, setChosenRounds] = useState(8);
+  // Vote optimiste : reflète instantanément la sélection avant le retour Firebase.
+  const [pendingVote, setPendingVote] = useState<string | null>(null);
   // Garde anti double-écriture de la transition reveal (par manche).
   const revealWrittenRef = useRef<number>(-1);
 
-  const myVote = votes[playerId];
+  // À chaque nouvelle manche, on efface le vote optimiste.
+  useEffect(() => { setPendingVote(null); }, [round]);
+
+  const myVote = votes[playerId] !== undefined ? votes[playerId] : (pendingVote ?? undefined);
   const votedCount = players.filter(p => votes[p.id] !== undefined).length;
   const allVoted = players.length > 0 && players.every(p => votes[p.id] !== undefined);
 
@@ -156,8 +161,9 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
 
   const castVote = (targetId: string) => {
     if (phase !== "vote") return;
+    setPendingVote(targetId);
     // Idempotent : re-voter écrase simplement le vote précédent.
-    update(dbRef(`games/${roomId}`), { qdnVotes: { ...votes, [playerId]: targetId } });
+    update(dbRef(`games/${roomId}`), { [`qdnVotes/${playerId}`]: targetId });
   };
 
   const nextRound = () => {
