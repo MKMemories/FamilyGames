@@ -62,6 +62,41 @@ function shuffleArr<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
+/* ─── Variété des thèmes : mémorise les catégories de départ récentes ─── */
+const THEMES_KEY = "khelij_quiz_themes";
+function loadRecentThemes(): string[] {
+  try { return JSON.parse(localStorage.getItem(THEMES_KEY) || "[]"); } catch { return []; }
+}
+function saveStartTheme(cat: string) {
+  const arr = [cat, ...loadRecentThemes().filter(c => c !== cat)].slice(0, 4);
+  try { localStorage.setItem(THEMES_KEY, JSON.stringify(arr)); } catch { /* ignore */ }
+}
+
+/* Sélectionne `count` questions en variant les thèmes : round-robin entre
+   catégories, en plaçant en tête les thèmes NON joués récemment (rotation
+   d'une partie à l'autre) → jamais 10 questions du même thème. */
+function diversifyByCategory(questions: StoredQuizQuestion[], count: number, recent: string[]): StoredQuizQuestion[] {
+  const byCat = new Map<string, StoredQuizQuestion[]>();
+  for (const q of shuffleArr(questions)) {
+    const c = q.category || "Divers";
+    if (!byCat.has(c)) byCat.set(c, []);
+    byCat.get(c)!.push(q);
+  }
+  // Thèmes frais d'abord ; parmi les récents, le plus ancien avant le plus récent.
+  const prio = (c: string) => { const i = recent.indexOf(c); return i === -1 ? 0 : recent.length - i; };
+  const cats = shuffleArr([...byCat.keys()]).sort((a, b) => prio(a) - prio(b));
+  const picked: StoredQuizQuestion[] = [];
+  let added = true;
+  while (picked.length < count && added) {
+    added = false;
+    for (const c of cats) {
+      const bucket = byCat.get(c)!;
+      if (bucket.length) { picked.push(bucket.shift()!); added = true; if (picked.length >= count) break; }
+    }
+  }
+  return picked;
+}
+
 /* ─── Scoped premium styles (visual only) ───────────────────── */
 const QUIZ_CSS = `
 .quiz-question-wrap { will-change: transform, opacity; }
@@ -239,10 +274,11 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
         category: q.category || "Culture générale",
       }));
 
-      // Prefer questions not seen in the last 10 sessions
+      // Prefer questions not seen in the last 10 sessions, then spread themes.
       const fresh = all.filter(q => !usedTexts.has(q.question));
-      const pool = shuffleArr(fresh.length >= 10 ? fresh : all);
-      const selected = pool.slice(0, 10);
+      const basePool = fresh.length >= 10 ? fresh : all;
+      const selected = diversifyByCategory(basePool, 10, loadRecentThemes());
+      if (selected[0]) saveStartTheme(selected[0].category);
 
       saveSession(selected);
       const opts = selected[0] ? shuffleArr([selected[0].answer, ...selected[0].badAnswers]) : [];
@@ -260,7 +296,9 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
     } catch {
       const usedTexts2 = getUsedTexts();
       const fresh = FALLBACK_QUESTIONS.filter(q => !usedTexts2.has(q.question));
-      const pool2 = shuffleArr(fresh.length >= 5 ? fresh : FALLBACK_QUESTIONS).slice(0, 10);
+      const basePool2 = fresh.length >= 10 ? fresh : FALLBACK_QUESTIONS;
+      const pool2 = diversifyByCategory(basePool2, 10, loadRecentThemes());
+      if (pool2[0]) saveStartTheme(pool2[0].category);
       saveSession(pool2);
       const opts = shuffleArr([pool2[0].answer, ...pool2[0].badAnswers]);
       await update(dbRef(`games/${roomId}`), {

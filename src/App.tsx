@@ -25,6 +25,7 @@ import { Des } from "./components/games/Des";
 import { Blokus } from "./components/games/Blokus";
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { RulesSheet } from "./components/RulesSheet";
 import { useTheme } from "./hooks/useTheme";
 import type { AppState, GameId, Room, Difficulty } from "./types";
 
@@ -260,6 +261,7 @@ function App() {
 
       {screen === "game" && room && game && roomId && playerId && (
         <>
+          {game !== "chronovore" && <RulesSheet gameId={game} />}
           {game === "connect4" && <Connect4 room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
           {game === "checkers" && <Checkers room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
           {game === "chess" && <Chess room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
