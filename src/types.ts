@@ -95,10 +95,14 @@ export interface Room {
   quizThemes?: string[] | null;
   quizQuestions?: StoredQuizQuestion[] | null;
   quizAnswers?: Record<string, string>;
+  quizTimes?: Record<string, number>;            // ms timestamp of each answer (speed bonus)
   quizOptions?: string[];
   questionIdx?: number;
   revealed?: boolean;
   totalQuestions?: number;
+  // Jokers (shared across round-based games)
+  jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
+  jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round
   // Defi
   defiIdx?: number;
   defiDeck?: number[];

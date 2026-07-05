@@ -3,7 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { QUIZ_BANK } from "../../lib/gameData";
 import { categoryVisual } from "../../lib/categoryVisual";
+import { JokerBar } from "../JokerBar";
+import { initJokers, jokerCount, speedBonus, type JokerType } from "../../lib/jokers";
 import type { Room, StoredQuizQuestion } from "../../types";
+
+const QUIZ_JOKERS: JokerType[] = ["fifty", "double", "timeplus"];
+const TIMEPLUS_SEC = 8;
 
 /* ─── API types ─────────────────────────────────────────────── */
 interface QuizzApiItem {
@@ -171,6 +176,10 @@ const QUIZ_CSS = `
   color: var(--cat, var(--accent)) !important;
   border: 1px solid color-mix(in srgb, var(--cat, var(--accent)) 34%, transparent);
 }
+/* Points gagnés à la révélation (base + vitesse + ×2) */
+.quiz-gain{display:inline-block;margin-left:.4rem;font-family:var(--font-d);font-size:.82rem;
+  color:var(--green);background:color-mix(in srgb,var(--green) 16%,transparent);
+  padding:.05rem .4rem;border-radius:999px;}
 `;
 
 /* ─── Component ─────────────────────────────────────────────── */
@@ -188,8 +197,10 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
   const [shuffledOpts, setShuffledOpts] = useState<string[]>([]);
   const [pendingAnswer, setPendingAnswer] = useState<string | null>(null); // optimistic local pick
+  const [fiftyHidden, setFiftyHidden] = useState<string[]>([]);            // 50/50: wrong opts masqués
   const didFetch = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scoreRef = useRef(-1);                                             // garde d'idempotence du scoring
 
   const players = Object.values(room.players || {});
   const qIdx = room.questionIdx || 0;
@@ -241,6 +252,9 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
         totalQuestions: selected.length,
         questionIdx: 0,
         quizAnswers: {},
+        quizTimes: {},
+        jokerActive: {},
+        jokers: initJokers(Object.keys(room.players || {}), QUIZ_JOKERS),
         revealed: false,
       });
     } catch {
@@ -255,6 +269,9 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
         totalQuestions: pool2.length,
         questionIdx: 0,
         quizAnswers: {},
+        quizTimes: {},
+        jokerActive: {},
+        jokers: initJokers(Object.keys(room.players || {}), QUIZ_JOKERS),
         revealed: false,
       });
     } finally {
@@ -269,8 +286,27 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
     }
   }, [qIdx, room.quizOptions]);
 
-  /* Clear the optimistic pick when the question changes. */
-  useEffect(() => { setPendingAnswer(null); }, [qIdx]);
+  /* Clear the optimistic pick + joker effects when the question changes. */
+  useEffect(() => { setPendingAnswer(null); setFiftyHidden([]); }, [qIdx]);
+
+  /* Points de la manche (déterministe depuis l'état : base 10 + bonus de vitesse
+     ⚡ aux plus rapides + joker ×2). Sert au scoring hôte ET à l'affichage. */
+  const roundPoints = (): Record<string, number> => {
+    const pts: Record<string, number> = {};
+    const ans = room.quizAnswers || {};
+    const times = room.quizTimes || {};
+    const active = room.jokerActive || {};
+    const correct = players.filter(p => ans[p.id] === currentQ?.answer);
+    const ranked = [...correct].sort((a, b) => (times[a.id] ?? Infinity) - (times[b.id] ?? Infinity));
+    players.forEach(p => {
+      const base = ans[p.id] === currentQ?.answer ? 10 : 0;
+      const rank = ranked.findIndex(x => x.id === p.id);
+      let total = base + (rank >= 0 ? speedBonus(rank) : 0);
+      if (active[p.id] === "double") total *= 2;
+      pts[p.id] = total;
+    });
+    return pts;
+  };
 
   /* ── Host reveals once EVERY player has answered (authoritative state) ── */
   useEffect(() => {
@@ -297,13 +333,48 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [qIdx, revealed, !!currentQ]);
 
+  /* ── Hôte : calcule les points (base + vitesse + ×2) UNE fois à la révélation ── */
+  useEffect(() => {
+    if (!isHost || !revealed || !currentQ) return;
+    if (scoreRef.current === qIdx) return;
+    scoreRef.current = qIdx;
+    const rp = roundPoints();
+    const scores = { ...(room.scores || {}) };
+    players.forEach(p => { scores[p.id] = (scores[p.id] || 0) + (rp[p.id] || 0); });
+    update(dbRef(`games/${roomId}`), { scores });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, revealed, qIdx]);
+
   const handleAnswer = (chosen: string) => {
     if (myAnswer !== undefined || revealed || !currentQ) return;
     setPendingAnswer(chosen); // optimistic — instant highlight
-    // Write to PER-PLAYER paths so simultaneous answers never clobber each other.
-    const upd: Record<string, unknown> = { [`quizAnswers/${playerId}`]: chosen };
-    if (chosen === currentQ.answer) upd[`scores/${playerId}`] = ((room.scores || {})[playerId] || 0) + 10;
+    // Per-player PATH writes (never clobber). Timestamp drives the ⚡ speed bonus;
+    // the host tallies base + speed + ×2 at reveal time.
+    const upd: Record<string, unknown> = {
+      [`quizAnswers/${playerId}`]: chosen,
+      [`quizTimes/${playerId}`]: Date.now(),
+    };
     if (isSolo) upd.revealed = true;
+    update(dbRef(`games/${roomId}`), upd);
+  };
+
+  /* ── Jokers ── */
+  const myJokerActive = (room.jokerActive || {})[playerId] || null;
+  const useJoker = (type: JokerType) => {
+    if (myAnswer !== undefined || revealed) return;
+    if (jokerCount(room.jokers, playerId, type) <= 0) return;
+    if (type === "fifty") {
+      const wrongs = shuffledOpts.filter(o => o !== currentQ?.answer && !fiftyHidden.includes(o));
+      const toHide = shuffleArr(wrongs).slice(0, 2);
+      if (toHide.length === 0) return;
+      setFiftyHidden(h => [...h, ...toHide]);
+    } else if (type === "timeplus") {
+      setTimeLeft(t => t + TIMEPLUS_SEC);
+    }
+    const upd: Record<string, unknown> = {
+      [`jokers/${playerId}/${type}`]: jokerCount(room.jokers, playerId, type) - 1,
+    };
+    if (type === "double") upd[`jokerActive/${playerId}`] = "double";
     update(dbRef(`games/${roomId}`), upd);
   };
 
@@ -316,7 +387,7 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
     } else {
       const nextQ = questions[nextIdx];
       const opts = shuffleArr([nextQ.answer, ...nextQ.badAnswers]);
-      update(dbRef(`games/${roomId}`), { questionIdx: nextIdx, quizAnswers: {}, revealed: false, quizOptions: opts });
+      update(dbRef(`games/${roomId}`), { questionIdx: nextIdx, quizAnswers: {}, quizTimes: {}, jokerActive: {}, revealed: false, quizOptions: opts });
     }
   };
 
@@ -328,6 +399,11 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
     } else if (opt === myAnswer) return "chosen";
     return "";
   };
+
+  // Options affichées (50/50 masque 2 mauvaises réponses pour ce joueur).
+  const shownOpts = shuffledOpts.filter(o => !fiftyHidden.includes(o));
+  const canUseJokers = !revealed && myAnswer === undefined;
+  const revealPts = revealed ? roundPoints() : {};
 
   const timerPct = (timeLeft / TIMER_DURATION) * 100;
   const timerColor = timerPct > 55 ? "#4caf50" : timerPct > 28 ? "#ffbe42" : "#ff5252";
@@ -491,8 +567,17 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
             {currentQ.question}
           </motion.div>
 
+          {canUseJokers && (
+            <JokerBar
+              types={QUIZ_JOKERS}
+              counts={(room.jokers || {})[playerId] || {}}
+              active={myJokerActive}
+              onUse={useJoker}
+            />
+          )}
+
           <div className="quiz-options">
-            {shuffledOpts.map((opt, i) => {
+            {shownOpts.map((opt, i) => {
               const cls = getOptClass(opt);
               return (
                 <motion.button
@@ -570,6 +655,11 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
                     >
                       {p.name} : {noAns ? "⏰ Temps écoulé" : ans}{" "}
                       {ok ? "✅" : noAns ? "😅" : "❌"}
+                      {(revealPts[p.id] || 0) > 0 && (
+                        <span className="quiz-gain">
+                          +{revealPts[p.id]}{(room.jokerActive || {})[p.id] === "double" ? " ×2" : ""}
+                        </span>
+                      )}
                     </motion.div>
                   );
                 })}
