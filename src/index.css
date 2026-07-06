@@ -1768,3 +1768,24 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
 .podium-avatar:has(svg) { background: none !important; box-shadow: none !important; }
 .podium-avatar svg, .prr-emoji svg, .player-row svg { display: block; }
 .prr-emoji { display: inline-flex; align-items: center; }
+
+/* ══════════════════════════════════════════════════════════════
+   LIFTING PREMIUM — fond « aurore » réutilisable pour les jeux sobres
+   (couleur pilotée par --fx sur l'écran). + polish transverse.
+   ══════════════════════════════════════════════════════════════ */
+.game-screen { position: relative; }
+.fx-aurora {
+  position: fixed; inset: -25%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 20% 14%, color-mix(in srgb, var(--fx, var(--accent)) 42%, transparent), transparent 70%),
+    radial-gradient(40% 34% at 82% 10%, color-mix(in srgb, var(--fx2, var(--primary)) 40%, transparent), transparent 70%),
+    radial-gradient(46% 40% at 50% 108%, color-mix(in srgb, var(--fx, var(--accent)) 26%, transparent), transparent 72%);
+  filter: blur(24px) saturate(1.1);
+  opacity: .5;
+  animation: auroraDrift 18s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) { .fx-aurora { animation: none; } }
+/* le contenu du jeu passe au-dessus de l'aurore */
+.qdn-screen > *:not(.fx-aurora),
+.pb-screen > *:not(.fx-aurora),
+.ds-screen > *:not(.fx-aurora) { position: relative; z-index: 1; }

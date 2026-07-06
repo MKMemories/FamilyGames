@@ -320,7 +320,8 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   /* ── Écran de démarrage ── */
   if (phase === null) {
     return (
-      <div className="screen game-screen pb-screen">
+      <div className="screen game-screen pb-screen" style={{ ["--fx" as string]: "#0ea5e9", ["--fx2" as string]: "#38bdf8" }}>
+        <span className="fx-aurora" aria-hidden />
         <Topbar round={round} totalRounds={totalRounds} onLeave={onLeave} started={false}
                 players={players} scores={scores} />
         <div className="pb-start">
@@ -366,7 +367,8 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   /* ── Phase FILL ── */
   if (phase === "fill") {
     return (
-      <div className="screen game-screen pb-screen">
+      <div className="screen game-screen pb-screen" style={{ ["--fx" as string]: "#0ea5e9", ["--fx2" as string]: "#38bdf8" }}>
+        <span className="fx-aurora" aria-hidden />
         <Topbar round={round} totalRounds={totalRounds} onLeave={onLeave} started
                 players={players} scores={scores} />
 
@@ -469,7 +471,8 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   const rankedTotals = [...players].sort((a, b) => (scores[b.id] || 0) - (scores[a.id] || 0));
 
   return (
-    <div className="screen game-screen pb-screen">
+    <div className="screen game-screen pb-screen" style={{ ["--fx" as string]: "#0ea5e9", ["--fx2" as string]: "#38bdf8" }}>
+        <span className="fx-aurora" aria-hidden />
       <Topbar round={round} totalRounds={totalRounds} onLeave={onLeave} started
               players={players} scores={scores} />
 
@@ -622,10 +625,16 @@ const PB_CSS = `
 
 /* ── Lettre ── */
 .pb-letter-wrap{display:flex;flex-direction:column;align-items:center;gap:.35rem;margin-top:.2rem;}
-.pb-letter-badge{width:96px;height:96px;border-radius:28px;display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-d);font-size:3.6rem;color:#fff;
-  background:linear-gradient(135deg,var(--primary),var(--accent));
-  box-shadow:0 14px 40px rgba(var(--accent-rgb),.45);}
+.pb-letter-badge{position:relative;overflow:hidden;width:104px;height:104px;border-radius:30px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-d);font-size:3.9rem;color:#fff;
+  background:linear-gradient(150deg,var(--fx,#0ea5e9),var(--fx2,#38bdf8));
+  box-shadow:0 18px 44px color-mix(in srgb,var(--fx,#0ea5e9) 50%,transparent),inset 0 2px 0 rgba(255,255,255,.5),inset 0 -6px 14px rgba(0,0,0,.18);
+  text-shadow:0 3px 10px rgba(0,0,0,.28);animation:pbLetterIn .5s cubic-bezier(.34,1.56,.64,1);}
+.pb-letter-badge::after{content:"";position:absolute;top:-40%;left:-30%;width:50%;height:200%;transform:rotate(18deg);
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);animation:pbShine 4s ease-in-out infinite;}
+@keyframes pbLetterIn{from{transform:scale(.4) rotate(-12deg);opacity:0;}to{transform:scale(1) rotate(0);opacity:1;}}
+@keyframes pbShine{0%,100%{transform:translateX(-160%) rotate(18deg);}55%,100%{transform:translateX(360%) rotate(18deg);}}
+@media (prefers-reduced-motion: reduce){.pb-letter-badge::after{animation:none;}}
 .pb-letter-badge.small{width:52px;height:52px;border-radius:16px;font-size:1.9rem;box-shadow:var(--shadow);}
 .pb-letter-caption{font-size:.78rem;font-weight:800;color:var(--muted);}
 

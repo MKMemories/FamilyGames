@@ -2,7 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { dbRef, update } from "../../lib/firebase";
 import { fx } from "../../lib/sound";
 import { QUIDENOUS_QUESTIONS } from "../../lib/gameData";
-import type { Room } from "../../types";
+import { Avatar } from "../Avatar";
+import { decodeAvatar } from "../../lib/avatar";
+import type { Room, Player } from "../../types";
+
+/* Avatar SVG premium si le joueur en a un, sinon pastille emoji colorée. */
+function PA({ p, size = 40 }: { p: Player; size?: number }) {
+  const a = decodeAvatar(p.avatar);
+  if (a) return <span style={{ display: "inline-flex", borderRadius: "50%", boxShadow: `0 0 0 2px ${p.color || "#fff"}66` }}><Avatar a={a} size={size} /></span>;
+  return <span className="qdn-avatar" style={{ background: p.color || "var(--accent)", width: size, height: size }}>{p.emoji || "🙂"}</span>;
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    QUI DE NOUS… ? — Jeu de vote party (3–8 joueurs, chacun sur son écran)
@@ -191,7 +200,8 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
   /* ── Écran de démarrage (phase indéfinie) ── */
   if (phase === undefined) {
     return (
-      <div className="screen game-screen qdn-screen">
+      <div className="screen game-screen qdn-screen" style={{ ["--fx" as string]: "#10b981", ["--fx2" as string]: "#34d399" }}>
+        <span className="fx-aurora" aria-hidden />
         <Topbar players={players} scores={scores} round={round} totalRounds={totalRounds} onLeave={onLeave} started={false} />
         <div className="qdn-start">
           <div className="qdn-start-emoji">🤔</div>
@@ -241,7 +251,8 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
   /* ── Phase VOTE ── */
   if (phase === "vote") {
     return (
-      <div className="screen game-screen qdn-screen">
+      <div className="screen game-screen qdn-screen" style={{ ["--fx" as string]: "#10b981", ["--fx2" as string]: "#34d399" }}>
+        <span className="fx-aurora" aria-hidden />
         <Topbar players={players} scores={scores} round={round} totalRounds={totalRounds} onLeave={onLeave} started />
 
         <div className="qdn-question-card">
@@ -265,7 +276,7 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
                 style={selected ? { borderColor: col, boxShadow: `0 0 0 3px ${col}55` } : { borderColor: "var(--border)" }}
                 onClick={() => castVote(p.id)}
               >
-                <span className="qdn-avatar" style={{ background: col }}>{p.emoji || "🙂"}</span>
+                <PA p={p} size={44} />
                 <span className="qdn-vote-name">
                   {p.name}{isMe && <span className="qdn-you">toi</span>}
                 </span>
@@ -295,7 +306,8 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
   const isLast = round >= totalRounds;
 
   return (
-    <div className="screen game-screen qdn-screen">
+    <div className="screen game-screen qdn-screen" style={{ ["--fx" as string]: "#10b981", ["--fx2" as string]: "#34d399" }}>
+        <span className="fx-aurora" aria-hidden />
       <Topbar players={players} scores={scores} round={round} totalRounds={totalRounds} onLeave={onLeave} started />
 
       <div className="qdn-question-card small">
@@ -324,7 +336,7 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
                 </div>
               )}
               <div className="qdn-reveal-head">
-                <span className="qdn-avatar sm" style={{ background: col }}>{p.emoji || "🙂"}</span>
+                <PA p={p} size={34} />
                 <span className="qdn-reveal-name">
                   {isWinner && <span className="qdn-crown">🏆</span>}
                   {p.name}
@@ -443,14 +455,17 @@ const QDN_CSS = `
 .qdn-dot-pulse{width:10px;height:10px;border-radius:50%;background:var(--primary);animation:qdnPulse 1s infinite;}
 
 /* ── Carte question ── */
-.qdn-question-card{position:relative;max-width:560px;margin:0 auto;width:calc(100% - 1.6rem);
-  border-radius:var(--radius);padding:1.4rem 1.2rem;text-align:center;
-  background:linear-gradient(135deg,rgba(var(--accent-rgb,124,92,191),.14),rgba(255,107,157,.12));
-  border:1px solid var(--border);box-shadow:var(--shadow);animation:qdnPop .4s ease;}
+.qdn-question-card{position:relative;max-width:560px;margin:.4rem auto;width:calc(100% - 1.6rem);overflow:hidden;
+  border-radius:1.4rem;padding:1.6rem 1.3rem;text-align:center;
+  background:linear-gradient(150deg, color-mix(in srgb,var(--fx) 16%,var(--surface-1)), var(--surface-1));
+  border:1.5px solid color-mix(in srgb,var(--fx) 32%,var(--border));
+  box-shadow:0 16px 40px color-mix(in srgb,var(--fx) 22%,transparent), inset 0 1px 0 rgba(255,255,255,.4);animation:qdnPop .4s ease;}
+.qdn-question-card::before{content:"❝";position:absolute;top:-.6rem;left:.6rem;font-size:3.4rem;font-family:var(--font-d);
+  color:color-mix(in srgb,var(--fx) 40%,transparent);opacity:.4;}
 .qdn-question-card.small{padding:.9rem 1rem;}
 .qdn-q-badge{display:inline-block;font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--accent);background:var(--surface-2,rgba(255,255,255,.6));padding:.28rem .7rem;border-radius:999px;margin-bottom:.6rem;}
-.qdn-q-text{font-family:var(--font-d);font-size:1.35rem;line-height:1.3;color:var(--text);}
+  color:#fff;background:linear-gradient(135deg,var(--fx),var(--fx2,var(--fx)));padding:.3rem .8rem;border-radius:999px;margin-bottom:.6rem;box-shadow:0 4px 12px color-mix(in srgb,var(--fx) 40%,transparent);}
+.qdn-q-text{font-family:var(--font-d);font-size:1.4rem;line-height:1.3;color:var(--text);}
 .qdn-q-text.small{font-size:1rem;}
 
 .qdn-vote-hint{text-align:center;font-size:.85rem;font-weight:800;color:var(--muted);}
@@ -458,10 +473,10 @@ const QDN_CSS = `
 /* ── Grille de vote ── */
 .qdn-vote-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;
   max-width:560px;margin:0 auto;width:calc(100% - 1.6rem);}
-.qdn-vote-card{position:relative;display:flex;align-items:center;gap:.7rem;text-align:left;
-  border:2px solid var(--border);border-radius:var(--radius);padding:.75rem .8rem;cursor:pointer;
-  background:var(--surface-1,var(--card));box-shadow:var(--shadow);transition:.15s;font-family:var(--font-b);}
-.qdn-vote-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);}
+.qdn-vote-card{position:relative;display:flex;align-items:center;gap:.7rem;text-align:left;overflow:hidden;
+  border:2px solid var(--border);border-radius:1.1rem;padding:.7rem .8rem;cursor:pointer;
+  background:linear-gradient(140deg, color-mix(in srgb,var(--fx) 7%,var(--surface-1)), var(--surface-1));box-shadow:var(--shadow);transition:transform .16s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,border-color .2s;font-family:var(--font-b);}
+.qdn-vote-card:hover{transform:translateY(-4px);box-shadow:0 14px 30px color-mix(in srgb,var(--fx) 24%,transparent);border-color:color-mix(in srgb,var(--fx) 45%,transparent);}
 .qdn-vote-card:active{transform:translateY(0);}
 .qdn-vote-card.sel{transform:translateY(-2px);}
 .qdn-avatar{flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;

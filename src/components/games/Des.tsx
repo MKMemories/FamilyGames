@@ -237,7 +237,8 @@ export function Des({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }
      ════════════════════════════════════════════════════════════════════════ */
   if (phase === null || phase === undefined) {
     return (
-      <div className="screen game-screen ds-screen">
+      <div className="screen game-screen ds-screen" style={{ ["--fx" as string]: "#a855f7", ["--fx2" as string]: "#c084fc" }}>
+        <span className="fx-aurora" aria-hidden />
         <Topbar players={players} counts={counts} turn="" onLeave={onLeave} started={false} />
         <div className="ds-start">
           <div className="ds-start-emoji">🎲</div>
@@ -274,7 +275,8 @@ export function Des({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }
   const faceLabel = (f: number) => `${f}`;
 
   return (
-    <div className="screen game-screen ds-screen">
+    <div className="screen game-screen ds-screen" style={{ ["--fx" as string]: "#a855f7", ["--fx2" as string]: "#c084fc" }}>
+        <span className="fx-aurora" aria-hidden />
       <Topbar players={players} counts={counts} turn={turn} onLeave={onLeave} started />
 
       {/* Bandeau mise courante — hauteur fixe, pas de reflow */}
@@ -593,11 +595,12 @@ const DS_CSS = `
 .ds-eliminated{font-weight:900;color:var(--muted);font-size:.9rem;}
 
 /* Dé */
-.ds-die{width:40px;height:40px;border-radius:10px;display:grid;
+.ds-die{width:44px;height:44px;border-radius:13px;display:grid;
   grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
-  padding:5px;gap:1px;background:linear-gradient(150deg,#ffffff,#e9ecf5);
-  border:1px solid rgba(0,0,0,.14);box-shadow:0 3px 7px rgba(0,0,0,.2),inset 0 -3px 5px rgba(0,0,0,.08);}
-.ds-die.mini{width:28px;height:28px;border-radius:7px;padding:3px;}
+  padding:6px;gap:1px;background:linear-gradient(150deg,#ffffff,#e4e8f2);
+  border:1px solid rgba(0,0,0,.1);box-shadow:0 6px 13px rgba(0,0,0,.24),inset 0 2px 2px rgba(255,255,255,.95),inset 0 -4px 7px rgba(0,0,0,.12);}
+.ds-die.hidden{box-shadow:0 6px 16px color-mix(in srgb,var(--fx,#a855f7) 45%,transparent),inset 0 2px 2px rgba(255,255,255,.3);}
+.ds-die.mini{width:28px;height:28px;border-radius:8px;padding:3px;}
 .ds-die.hl{background:linear-gradient(150deg,#fff6d6,#ffe08a);
   border-color:var(--gold);box-shadow:0 0 0 2px var(--gold),0 4px 10px rgba(240,171,52,.5);}
 .ds-die.hidden{background:linear-gradient(150deg,var(--primary),var(--accent));
