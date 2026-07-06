@@ -41,10 +41,13 @@ export interface StoredQuizQuestion {
 /* ── Le Juste Prix ───────────────────────── */
 export interface JpProduct {
   id: number;
-  title: string;
+  title: string;         // inclut la quantité/poids pour les fruits & légumes
   price: number;
   thumbnail: string;
   category: string;
+  emoji?: string;        // visuel (aucune image externe requise)
+  source?: string;       // source du prix (ex. « FranceAgriMer 2024 »)
+  country?: string;      // pays où le prix s'applique (ex. « France »)
 }
 
 /* ── Dessinez, c'est gagné ───────────────── */
@@ -145,6 +148,7 @@ export interface Room {
   jpAnswers?: Record<string, number>;
   jpTimes?: Record<string, number>;              // submit timestamp (speed bonus)
   jpRevealed?: boolean;
+  jpUsed?: number[];                             // produits déjà tirés dans la partie (non-répétition)
   // Dessinez, c'est gagné
   dessinManche?: number;
   dessinTotalManches?: number;

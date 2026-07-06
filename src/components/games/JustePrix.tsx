@@ -4,37 +4,26 @@ import { dbRef, update } from "../../lib/firebase";
 import { gameHistory } from "../../hooks/useGameHistory";
 import { JokerBar } from "../JokerBar";
 import { initJokers, jokerCount, speedBonus, type JokerType } from "../../lib/jokers";
+import { JP_PRODUCTS } from "../../lib/justePrixData";
 import type { Room, JpProduct } from "../../types";
 
 const JP_JOKERS: JokerType[] = ["double", "timeplus"];
 const JP_TIMEPLUS_SEC = 6;
 
-interface DummyJsonResponse {
-  products: { id: number; title: string; price: number; thumbnail: string; category: string }[];
-}
-
 const TIMER_SEC   = 15;
 const TOTAL_ROUNDS = 10;
 const jpHistory   = gameHistory("justeprix");
 
-const FALLBACK_PRODUCTS: JpProduct[] = [
-  { id: 9001, title: "Écouteurs Bluetooth sans fil",  price: 49.99,  thumbnail: "", category: "Électronique" },
-  { id: 9002, title: "Montre connectée sport",         price: 189.00, thumbnail: "", category: "Électronique" },
-  { id: 9003, title: "Chaise de bureau ergonomique",   price: 299.99, thumbnail: "", category: "Mobilier" },
-  { id: 9004, title: "Cafetière expresso automatique", price: 129.99, thumbnail: "", category: "Cuisine" },
-  { id: 9005, title: "Tapis de yoga antidérapant",     price: 34.99,  thumbnail: "", category: "Sport" },
-  { id: 9006, title: "Lampe de bureau LED flexible",   price: 24.99,  thumbnail: "", category: "Maison" },
-  { id: 9007, title: "Casque audio à réduction de bruit", price: 249.00, thumbnail: "", category: "Électronique" },
-  { id: 9008, title: "Robot aspirateur connecté",      price: 349.99, thumbnail: "", category: "Maison" },
-  { id: 9009, title: "Paire de baskets de running",    price: 89.90,  thumbnail: "", category: "Sport" },
-  { id: 9010, title: "Grille-pain 4 tranches inox",    price: 44.99,  thumbnail: "", category: "Cuisine" },
-  { id: 9011, title: "Sac à dos de randonnée 40L",     price: 74.99,  thumbnail: "", category: "Sport" },
-  { id: 9012, title: "Enceinte portable étanche",      price: 59.99,  thumbnail: "", category: "Électronique" },
-  { id: 9013, title: "Set de 12 verres à eau",         price: 19.99,  thumbnail: "", category: "Cuisine" },
-  { id: 9014, title: "Ventilateur sur pied silencieux",price: 39.99,  thumbnail: "", category: "Maison" },
-  { id: 9015, title: "Trottinette électrique pliable", price: 399.00, thumbnail: "", category: "Mobilité" },
-  { id: 9016, title: "Parapluie tempête automatique",  price: 22.50,  thumbnail: "", category: "Accessoires" },
-];
+/* Tire un produit du catalogue en évitant TOUTE répétition : ceux déjà vus
+   dans la partie (jpUsed) ET ceux des parties récentes (historique local). */
+function pickProduct(usedInGame: number[]): JpProduct {
+  const inGame = new Set(usedInGame.map(String));
+  const recent = jpHistory.getUsedSet();
+  let pool = JP_PRODUCTS.filter(p => !inGame.has(String(p.id)) && !recent.has(String(p.id)));
+  if (pool.length === 0) pool = JP_PRODUCTS.filter(p => !inGame.has(String(p.id))); // partie longue : on oublie l'historique
+  if (pool.length === 0) pool = JP_PRODUCTS;                                        // filet ultime
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 interface JustePrixProps {
   room: Room;
@@ -49,7 +38,6 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
   const [guess, setGuess]       = useState("");
   const [timeLeft, setTimeLeft] = useState(TIMER_SEC);
   const [submitted, setSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const didFetch = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -64,11 +52,11 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
   const jokerActiveMap = room.jokerActive ?? {};
   const myJokerActive = jokerActiveMap[playerId] || null;
 
-  /* ── Fetch product (host only) ── */
+  /* ── Choix du produit (hôte uniquement) ── */
   useEffect(() => {
     if (!isHost || product || didFetch.current) return;
     didFetch.current = true;
-    fetchProduct();
+    pickAndSet();
   }, [isHost, product]);
 
   /* ── Host initialise le stock de jokers au tout début ── */
@@ -136,30 +124,13 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
     if (allAnswered) update(dbRef(`games/${roomId}`), { jpRevealed: true });
   }, [jpAnswers]);
 
-  const fetchProduct = async () => {
-    setIsLoading(true);
-    try {
-      const res  = await fetch("https://dummyjson.com/products?limit=100");
-      const data: DummyJsonResponse = await res.json();
-      const used = jpHistory.getUsedSet();
-      const fresh = data.products.filter(p => !used.has(String(p.id)));
-      const pool  = fresh.length >= 1 ? fresh : data.products;
-      const prod  = pool[Math.floor(Math.random() * pool.length)];
-      await update(dbRef(`games/${roomId}`), {
-        jpProduct: { id: prod.id, title: prod.title, price: prod.price, thumbnail: prod.thumbnail, category: prod.category },
-        jpAnswers: {}, jpRevealed: false,
-      });
-    } catch {
-      const used  = jpHistory.getUsedSet();
-      const fresh = FALLBACK_PRODUCTS.filter(p => !used.has(String(p.id)));
-      const pool  = fresh.length >= 1 ? fresh : FALLBACK_PRODUCTS;
-      const prod  = pool[Math.floor(Math.random() * pool.length)];
-      await update(dbRef(`games/${roomId}`), {
-        jpProduct: prod, jpAnswers: {}, jpRevealed: false,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const pickAndSet = async () => {
+    const usedInGame = room.jpUsed ?? [];
+    const prod = pickProduct(usedInGame);
+    await update(dbRef(`games/${roomId}`), {
+      jpProduct: prod, jpAnswers: {}, jpRevealed: false,
+      jpUsed: [...usedInGame, prod.id],
+    });
   };
 
   const handleSubmit = () => {
@@ -209,7 +180,7 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
   const priceCount = useCountUp(product ? product.price : 0, 1200, revealed && !!product);
 
   /* ── Loading ── */
-  if (isLoading || !product) {
+  if (!product) {
     return (
       <div className="screen game-screen">
         <div className="game-topbar">
@@ -274,7 +245,11 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
               transition={{ type: "spring", stiffness: 380, damping: 20, delay: 0.1 }}
             />
           ) : (
-            <div className="jp-img-placeholder">🛒</div>
+            <motion.div className="jp-img-placeholder"
+              initial={{ scale: 0.5, opacity: 0, rotate: -8 }} animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 320, damping: 16, delay: 0.1 }}>
+              {product.emoji || "🛒"}
+            </motion.div>
           )}
           <motion.div
             className="jp-product-cat"
@@ -349,6 +324,12 @@ export function JustePrix({ room, roomId, playerId, isHost, isSolo, onLeave }: J
           >
             Prix réel : <strong>{priceCount.toFixed(2)} €</strong>
           </motion.div>
+          {(product.source || product.country) && (
+            <motion.div className="jp-source"
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+              📍 {product.country || "France"} · prix moyen indicatif{product.source ? ` · source : ${product.source}` : ""}
+            </motion.div>
+          )}
           <div className="jp-results">
             {(() => {
               const sorted = revealEntries.slice().sort((a, b) => a.diff - b.diff);
