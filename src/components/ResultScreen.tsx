@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { fx } from "../lib/sound";
 import { rankPoints, accumulate } from "../lib/party";
+import { Avatar } from "./Avatar";
+import { decodeAvatar } from "../lib/avatar";
 import type { Room, Player } from "../types";
 
 interface ResultScreenProps {
@@ -131,7 +133,9 @@ export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPart
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 320, damping: 18, delay: dropDly }}
               >
-                <div className="podium-avatar" style={{ ["--pc" as string]: p.color }}>{p.emoji}</div>
+                <div className="podium-avatar" style={{ ["--pc" as string]: p.color }}>
+                  {decodeAvatar(p.avatar) ? <Avatar a={decodeAvatar(p.avatar)!} size={54} /> : p.emoji}
+                </div>
                 <div className="podium-pname" style={{ color: p.color || "#fff" }}>{p.name}</div>
                 <motion.div
                   className="podium-medal"
@@ -173,7 +177,7 @@ export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPart
             variants={{ hidden: { opacity: 0, x: -24 }, show: { opacity: 1, x: 0 } }}
           >
             <span className="prr-medal">{MEDALS[i] || `${i + 1}.`}</span>
-            <span className="prr-emoji">{p.emoji}</span>
+            <span className="prr-emoji">{decodeAvatar(p.avatar) ? <Avatar a={decodeAvatar(p.avatar)!} size={30} /> : p.emoji}</span>
             <span className="prr-name">{p.name}</span>
             {hasScores ? (
               <span className="prr-score">{scores[p.id] || 0} pts</span>

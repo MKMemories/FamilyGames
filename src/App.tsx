@@ -40,7 +40,7 @@ import type { AppState, GameId, Room, Difficulty } from "./types";
    rafraîchissement ou une mise en veille du téléphone. ── */
 const SESSION_KEY = "khelij_session";
 interface SavedSession {
-  roomId: string; game: GameId; playerId: string; playerName: string; playerColor: string; emoji: string;
+  roomId: string; game: GameId; playerId: string; playerName: string; playerColor: string; emoji: string; avatar?: string;
 }
 function saveSession(s: SavedSession) {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch { /* ignore */ }
@@ -60,6 +60,7 @@ function App() {
     playerId: null,
     playerName: null,
     playerColor: null,
+    playerAvatar: null,
     isHost: false,
     isSolo: false,
     room: null,
@@ -107,7 +108,7 @@ function App() {
       const snap = await get(dbRef(`games/${sess.roomId}`));
       const r = snap.exists() ? (snap.val() as Room) : null;
       if (!r) { clearSession(); return; }
-      const playerObj = { id: sess.playerId, name: sess.playerName, color: sess.playerColor, emoji: sess.emoji };
+      const playerObj = { id: sess.playerId, name: sess.playerName, color: sess.playerColor, emoji: sess.emoji, ...(sess.avatar ? { avatar: sess.avatar } : {}) };
       await update(dbRef(`games/${sess.roomId}/players`), { [sess.playerId]: playerObj });
       if ((r.scores || {})[sess.playerId] === undefined) {
         await update(dbRef(`games/${sess.roomId}/scores`), { [sess.playerId]: 0 });
@@ -116,7 +117,7 @@ function App() {
       const screen = r.status === "playing" ? "game" : r.status === "finished" ? "result" : "lobby";
       setState(s => ({
         ...s, game: sess.game, roomId: sess.roomId, playerId: sess.playerId,
-        playerName: sess.playerName, playerColor: sess.playerColor, isSolo: false, screen, room: r,
+        playerName: sess.playerName, playerColor: sess.playerColor, playerAvatar: sess.avatar || null, isSolo: false, screen, room: r,
       }));
       subscribeRoom(sess.roomId);
     })();
@@ -137,11 +138,11 @@ function App() {
   }, [state.room?.hostId, state.room?.players, state.roomId, state.playerId]);
 
   const createRoom = async () => {
-    const { game, playerId, playerName, playerColor } = state;
+    const { game, playerId, playerName, playerColor, playerAvatar } = state;
     if (!game || !playerId || !playerName) { showToast("Choisis ton prénom d'abord !"); return; }
     const roomId = uid();
     const preset = MEMBER_PRESETS.find(m => m.name === playerName);
-    const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤" };
+    const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤", ...(playerAvatar ? { avatar: playerAvatar } : {}) };
     const initData = getInitData(game);
     const roomData = {
       id: roomId, game, status: "lobby",
@@ -152,18 +153,18 @@ function App() {
       ...initData,
     };
     await set(dbRef(`games/${roomId}`), roomData);
-    saveSession({ roomId, game, playerId, playerName, playerColor: playerObj.color, emoji: playerObj.emoji });
+    saveSession({ roomId, game, playerId, playerName, playerColor: playerObj.color, emoji: playerObj.emoji, avatar: playerAvatar || undefined });
     removeOnDisconnect(`games/${roomId}/players/${playerId}`);
     setState(s => ({ ...s, roomId, isHost: true, isSolo: false, screen: "lobby" }));
     subscribeRoom(roomId);
   };
 
   const startSoloMode = async (gameId: GameId, difficulty?: Difficulty) => {
-    const { playerId, playerName, playerColor } = state;
+    const { playerId, playerName, playerColor, playerAvatar } = state;
     if (!playerId || !playerName) { showToast("Choisis ton prénom d'abord !"); return; }
     const roomId = uid();
     const preset = MEMBER_PRESETS.find(m => m.name === playerName);
-    const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤" };
+    const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤", ...(playerAvatar ? { avatar: playerAvatar } : {}) };
     const initData = getInitData(gameId);
     let extra: Record<string, any> = {};
     if (gameId === "scrabble") {
@@ -200,7 +201,7 @@ function App() {
   };
 
   const joinRoom = async (code: string) => {
-    const { game, playerId, playerName, playerColor } = state;
+    const { game, playerId, playerName, playerColor, playerAvatar } = state;
     if (!game || !playerId || !playerName) { showToast("Choisis ton prénom d'abord !"); return; }
     const snap = await get(dbRef(`games/${code}`));
     if (!snap.exists()) { showToast("Salon introuvable !"); return; }
@@ -209,9 +210,9 @@ function App() {
     const g = GAMES.find(x => x.id === game);
     if (Object.keys(room.players || {}).length >= (g?.max || 4)) { showToast("Salon complet !"); return; }
     const preset = MEMBER_PRESETS.find(m => m.name === playerName);
-    const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤" };
+    const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤", ...(playerAvatar ? { avatar: playerAvatar } : {}) };
     await update(dbRef(`games/${code}/players`), { [playerId]: playerObj });
-    saveSession({ roomId: code, game, playerId, playerName, playerColor: playerObj.color, emoji: playerObj.emoji });
+    saveSession({ roomId: code, game, playerId, playerName, playerColor: playerObj.color, emoji: playerObj.emoji, avatar: playerAvatar || undefined });
     removeOnDisconnect(`games/${code}/players/${playerId}`);
     setState(s => ({ ...s, roomId: code, isHost: false, isSolo: false, screen: "lobby" }));
     subscribeRoom(code);
@@ -252,12 +253,12 @@ function App() {
   };
 
   const restartGame = async () => {
-    const { game, roomId, isSolo, playerId, playerName, playerColor } = state;
+    const { game, roomId, isSolo, playerId, playerName, playerColor, playerAvatar } = state;
     if (!game || !roomId) return;
     const initData = getInitData(game);
     if (isSolo && playerId && playerName) {
       const preset = MEMBER_PRESETS.find(m => m.name === playerName);
-      const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤" };
+      const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤", ...(playerAvatar ? { avatar: playerAvatar } : {}) };
       let extra: Record<string, any> = {};
       if (game === "scrabble") {
         let b = buildBag();
@@ -312,10 +313,11 @@ function App() {
     await update(dbRef(`games/${roomId}`), { partyScores, partyFinished: true, winner });
   };
 
-  const handleSelectPlayer = (name: string, color: string) => {
+  const handleSelectPlayer = (name: string, color: string, avatar?: string) => {
     const id = name ? (MEMBER_PRESETS.find(m => m.name === name) ? name : name + Math.floor(Math.random() * 100)) : "";
-    setState(s => ({ ...s, playerName: name || null, playerColor: color || null, playerId: id || null }));
+    setState(s => ({ ...s, playerName: name || null, playerColor: color || null, playerId: id || null, playerAvatar: avatar ?? s.playerAvatar }));
   };
+  const handleSetAvatar = (avatar: string) => setState(s => ({ ...s, playerAvatar: avatar }));
 
   const { screen, game, room, roomId, playerId, playerName, isSolo } = state;
   // L'hôte est DÉRIVÉ de room.hostId → la migration d'hôte prend effet
@@ -332,7 +334,9 @@ function App() {
       {screen === "home" && (
         <HomeScreen
           playerName={playerName}
+          playerAvatar={state.playerAvatar}
           onSelectPlayer={handleSelectPlayer}
+          onSetAvatar={handleSetAvatar}
           onContinue={() => go("pick")}
           onToast={showToast}
         />

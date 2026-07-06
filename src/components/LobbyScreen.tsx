@@ -1,4 +1,6 @@
 import { GAMES } from "../lib/gameData";
+import { Avatar } from "./Avatar";
+import { decodeAvatar } from "../lib/avatar";
 import type { Room, GameId } from "../types";
 
 interface LobbyScreenProps {
@@ -35,7 +37,9 @@ export function LobbyScreen({ room, game, roomId, playerId, isHost, onLeave, onS
       <div className="players-list">
         {players.map(p => (
           <div key={p.id} className="player-row" style={{ "--pc": p.color } as React.CSSProperties}>
-            <div className="player-avatar">{p.emoji || "👤"}</div>
+            {decodeAvatar(p.avatar)
+              ? <Avatar a={decodeAvatar(p.avatar)!} size={46} />
+              : <div className="player-avatar">{p.emoji || "👤"}</div>}
             <div className="player-info">
               <div className="player-name">{p.name}</div>
               <div className="player-status">

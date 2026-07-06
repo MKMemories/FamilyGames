@@ -28,6 +28,7 @@ export interface Player {
   name: string;
   color: string;
   emoji: string;
+  avatar?: string;   // avatar personnalisé encodé (voir lib/avatar)
 }
 
 export interface StoredQuizQuestion {
@@ -230,6 +231,7 @@ export interface AppState {
   playerId: string | null;
   playerName: string | null;
   playerColor: string | null;
+  playerAvatar: string | null;
   isHost: boolean;
   isSolo: boolean;
   room: Room | null;
