@@ -24,6 +24,54 @@ function clueStage(elapsed: number): number {
   return 0;
 }
 
+/* Illustration ORIGINALE par marque : une icône produit/secteur (aucun logo
+   réel), dévoilée d'abord floue puis nette au fil des indices. */
+const ICON_BY_NAME: Record<string, string> = {
+  Google: "search", Amazon: "cart", GoPro: "camera", Nvidia: "controller", Tesla: "car", Microsoft: "play", Sony: "controller",
+  YouTube: "play", Netflix: "play", Spotify: "music", WhatsApp: "chat", Instagram: "camera", Snapchat: "camera",
+  Twitch: "play", Pinterest: "cart", Reddit: "chat", Discord: "chat", TikTok: "music",
+  Starbucks: "coffee", KFC: "burger", "Domino's": "pizza", Subway: "burger", "McDonald's": "burger", "Burger King": "burger",
+  Nutella: "chocolate", Oreo: "cookie", Kinder: "chocolate", Haribo: "candy",
+  Lego: "brick", Roblox: "brick", Minecraft: "brick", IKEA: "cart", Airbnb: "house", Uber: "car", PayPal: "card",
+  Disney: "star", Marvel: "star", Supreme: "shirt", "The North Face": "shirt", Lacoste: "shirt",
+  "Red Bull": "can", Monster: "can", Fanta: "can", "Coca-Cola": "can", Pepsi: "can",
+};
+const ICON_BY_CAT: Record<string, string> = {
+  Tech: "phone", "Réseaux": "chat", Gaming: "controller", Sport: "sneaker", Mode: "shirt",
+  Luxe: "bag", "Fast-food": "burger", Boissons: "can", Snacks: "chocolate", Auto: "car", Divertissement: "play", Divers: "cart",
+};
+function iconFor(b: Brand): string { return ICON_BY_NAME[b.name] || ICON_BY_CAT[b.category] || "star"; }
+
+function BrandIcon({ icon }: { icon: string }) {
+  const W = "#ffffff";
+  const P: Record<string, React.ReactNode> = {
+    phone: <g><rect x="36" y="20" width="28" height="60" rx="6" fill={W} /><rect x="40" y="27" width="20" height="42" rx="2" fill="#000" opacity=".22" /><circle cx="50" cy="74" r="2.4" fill="#000" opacity=".3" /></g>,
+    chat: <g><path d="M24 30 h52 a6 6 0 0 1 6 6 v26 a6 6 0 0 1 -6 6 H44 l-12 10 v-10 h-8 a6 6 0 0 1 -6 -6 V36 a6 6 0 0 1 6 -6 z" fill={W} /><g fill="#000" opacity=".2"><circle cx="38" cy="49" r="3.5" /><circle cx="51" cy="49" r="3.5" /><circle cx="64" cy="49" r="3.5" /></g></g>,
+    controller: <g><rect x="20" y="38" width="60" height="30" rx="15" fill={W} /><rect x="30" y="49" width="12" height="4" rx="2" fill="#000" opacity=".28" /><rect x="34" y="45" width="4" height="12" rx="2" fill="#000" opacity=".28" /><circle cx="62" cy="48" r="3.4" fill="#000" opacity=".28" /><circle cx="70" cy="55" r="3.4" fill="#000" opacity=".28" /></g>,
+    sneaker: <g><path d="M18 58 q0 -6 6 -6 q10 0 14 -6 l6 -8 q3 -4 6 -1 l2 6 q10 3 26 9 q6 2 6 7 v6 H18 z" fill={W} /><path d="M46 33 l3 8" stroke="#000" strokeOpacity=".25" strokeWidth="2" /><path d="M20 66 h60" stroke="#000" strokeOpacity=".18" strokeWidth="4" /></g>,
+    shirt: <g><path d="M38 26 l-16 8 l6 12 l8 -4 v32 h28 V42 l8 4 l6 -12 l-16 -8 q-6 6 -14 0 z" fill={W} /></g>,
+    bag: <g><path d="M30 40 h40 l4 38 H26 z" fill={W} /><path d="M38 40 a12 12 0 0 1 24 0" fill="none" stroke={W} strokeWidth="4" /></g>,
+    burger: <g><path d="M26 34 q24 -12 48 0 q-24 6 -48 0 z" fill={W} /><rect x="24" y="44" width="52" height="6" rx="3" fill={W} /><rect x="26" y="52" width="48" height="5" rx="2.5" fill="#000" opacity=".22" /><path d="M26 60 q24 12 48 0 v2 q-24 10 -48 0 z" fill={W} /></g>,
+    pizza: <g><path d="M50 20 L78 74 Q50 84 22 74 Z" fill={W} /><circle cx="44" cy="58" r="4" fill="#000" opacity=".22" /><circle cx="58" cy="55" r="4" fill="#000" opacity=".22" /><circle cx="50" cy="70" r="3.5" fill="#000" opacity=".22" /></g>,
+    can: <g><rect x="38" y="22" width="24" height="56" rx="6" fill={W} /><ellipse cx="50" cy="24" rx="12" ry="3.5" fill="#000" opacity=".2" /><rect x="43" y="40" width="14" height="20" rx="2" fill="#000" opacity=".18" /></g>,
+    chocolate: <g><rect x="28" y="28" width="44" height="44" rx="4" fill={W} /><g stroke="#000" strokeOpacity=".2" strokeWidth="2"><path d="M50 28 v44 M28 50 h44 M39 28 v44 M61 28 v44 M28 39 h44 M28 61 h44" /></g></g>,
+    cookie: <g><circle cx="50" cy="50" r="26" fill={W} /><g fill="#000" opacity=".24"><circle cx="42" cy="42" r="3" /><circle cx="58" cy="46" r="3" /><circle cx="48" cy="58" r="3" /><circle cx="60" cy="58" r="2.4" /><circle cx="40" cy="55" r="2.4" /></g></g>,
+    candy: <g><path d="M20 50 l14 -8 v16 z" fill={W} /><path d="M80 50 l-14 -8 v16 z" fill={W} /><circle cx="50" cy="50" r="16" fill={W} /><path d="M44 44 l12 12 M56 44 l-12 12" stroke="#000" strokeOpacity=".2" strokeWidth="2" /></g>,
+    car: <g><path d="M20 58 q2 -12 8 -12 l6 -8 q3 -4 8 -4 h16 q5 0 8 4 l6 8 q6 0 8 12 v6 H20 z" fill={W} /><circle cx="34" cy="64" r="6" fill="#000" opacity=".35" /><circle cx="66" cy="64" r="6" fill="#000" opacity=".35" /><path d="M36 46 h28 l-4 -6 h-20 z" fill="#000" opacity=".18" /></g>,
+    play: <g><rect x="24" y="28" width="52" height="44" rx="10" fill={W} /><path d="M44 40 v20 l18 -10 z" fill="#000" opacity=".3" /></g>,
+    cart: <g><path d="M22 30 h8 l6 30 h34 l6 -22 H34" fill="none" stroke={W} strokeWidth="5" strokeLinejoin="round" strokeLinecap="round" /><circle cx="42" cy="70" r="5" fill={W} /><circle cx="68" cy="70" r="5" fill={W} /></g>,
+    search: <g><circle cx="45" cy="45" r="18" fill="none" stroke={W} strokeWidth="7" /><path d="M58 58 l16 16" stroke={W} strokeWidth="8" strokeLinecap="round" /></g>,
+    camera: <g><rect x="22" y="34" width="56" height="40" rx="7" fill={W} /><path d="M38 34 l4 -7 h16 l4 7 z" fill={W} /><circle cx="50" cy="54" r="12" fill="#000" opacity=".22" /><circle cx="50" cy="54" r="6" fill="#000" opacity=".25" /></g>,
+    coffee: <g><path d="M28 36 h34 v18 a17 17 0 0 1 -34 0 z" fill={W} /><path d="M62 40 a10 10 0 0 1 0 18" fill="none" stroke={W} strokeWidth="4" /><rect x="30" y="70" width="34" height="5" rx="2.5" fill={W} /><path d="M40 26 q4 4 0 8 M50 26 q4 4 0 8" stroke={W} strokeWidth="3" fill="none" strokeLinecap="round" opacity=".7" /></g>,
+    music: <g><path d="M58 22 v34 a10 10 0 1 1 -6 -9 V32 l-20 6 v24 a10 10 0 1 1 -6 -9 V34 z" fill={W} /></g>,
+    brick: <g><rect x="28" y="38" width="44" height="30" rx="3" fill={W} /><rect x="35" y="30" width="12" height="10" rx="3" fill={W} /><rect x="53" y="30" width="12" height="10" rx="3" fill={W} /></g>,
+    house: <g><path d="M50 24 L78 48 H22 Z" fill={W} /><rect x="30" y="46" width="40" height="30" fill={W} /><rect x="44" y="58" width="12" height="18" fill="#000" opacity=".22" /></g>,
+    card: <g><rect x="22" y="34" width="56" height="34" rx="5" fill={W} /><rect x="22" y="42" width="56" height="7" fill="#000" opacity=".28" /><rect x="28" y="58" width="16" height="4" rx="2" fill="#000" opacity=".22" /></g>,
+    star: <g><path d="M50 22 l8 18 20 2 -15 14 4 20 -17 -10 -17 10 4 -20 -15 -14 20 -2 z" fill={W} /></g>,
+  };
+  return <svg viewBox="0 0 100 100" width="58%" height="58%" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,.35))" }}>{P[icon] || P.star}</svg>;
+}
+
 interface Props { room: Room; roomId: string; playerId: string; isHost: boolean; isSolo: boolean; onLeave: () => void; }
 
 export function Marque({ room, roomId, playerId, isHost, isSolo, onLeave }: Props) {
@@ -184,18 +232,17 @@ export function Marque({ room, roomId, playerId, isHost, isSolo, onLeave }: Prop
         </div>
       )}
 
-      {/* Carte marque — indices progressifs */}
+      {/* Carte marque — illustration originale, floue puis nette au fil des indices */}
       <div className="mk-card">
         <span className="mk-aura" aria-hidden />
         <span className="mk-shine" aria-hidden />
-        <AnimatePresence mode="wait">
-          <motion.span key={`${brand.id}-${revealed ? "r" : stage >= 2}`} className="mk-mono"
-            initial={{ scale: 0.6, opacity: 0, filter: "blur(6px)" }} animate={{ scale: 1, opacity: 1, filter: "blur(0px)" }}
-            transition={{ type: "spring", stiffness: 260, damping: 18 }}>
-            {revealed || stage >= 2 ? monogram(brand) : "?"}
-          </motion.span>
-        </AnimatePresence>
+        <motion.div className="mk-illus" key={brand.id}
+          initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 240, damping: 18 }}
+          style={{ filter: `blur(${revealed ? 0 : [11, 7, 3.5, 1.5][stage]}px)`, transition: "filter .6s ease" }}>
+          <BrandIcon icon={iconFor(brand)} />
+        </motion.div>
         <span className="mk-sector" title="Secteur">{brand.emoji}</span>
+        {!revealed && stage < 2 && <span className="mk-qmark">?</span>}
       </div>
 
       {/* Indices dévoilés + progression */}
@@ -269,10 +316,10 @@ const MK_CSS = `
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);animation:mkShine 4.5s ease-in-out infinite;}
 @keyframes mkShine{0%,100%{transform:translateX(-140%) rotate(18deg)}55%,100%{transform:translateX(360%) rotate(18deg)}}
 @media (prefers-reduced-motion: reduce){.mk-shine{animation:none;}}
-.mk-mono{position:relative;z-index:2;font-family:var(--font-d);font-size:clamp(3.4rem,17vw,6rem);line-height:1;color:#fff;
-  text-shadow:0 4px 14px rgba(0,0,0,.4);letter-spacing:-.02em;}
-.mk-sector{position:absolute;bottom:10px;right:12px;z-index:3;font-size:1.5rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
-  background:rgba(255,255,255,.9);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;box-shadow:0 4px 10px rgba(0,0,0,.3);}
+.mk-illus{position:relative;z-index:2;width:100%;height:100%;display:grid;place-items:center;}
+.mk-qmark{position:absolute;z-index:3;top:10px;left:14px;font-family:var(--font-d);font-size:1.7rem;color:rgba(255,255,255,.85);text-shadow:0 2px 6px rgba(0,0,0,.4);}
+.mk-sector{position:absolute;bottom:10px;right:12px;z-index:3;font-size:1.4rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
+  background:rgba(255,255,255,.92);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;box-shadow:0 4px 10px rgba(0,0,0,.3);}
 
 .mk-clues{max-width:340px;margin:.2rem auto .5rem;display:flex;flex-direction:column;gap:.3rem;}
 .mk-clue{display:flex;align-items:center;gap:.5rem;font-size:.84rem;color:var(--text);background:var(--surface-1);
