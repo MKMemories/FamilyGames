@@ -31,7 +31,12 @@ function cellPos(i: number): [number, number] {
 
 export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }: Props) {
   const players = Object.values(room.players || {});
-  const mono = room.mono as MonoState | null;
+  // Firebase supprime les objets vides → on redonne owners/houses par défaut,
+  // sinon mono.owners[...] planterait (écran blanc au démarrage).
+  const monoRaw = room.mono as MonoState | null;
+  const mono: MonoState | null = monoRaw
+    ? { ...monoRaw, owners: monoRaw.owners || {}, houses: monoRaw.houses || {} }
+    : null;
   const nameOf = (id: string) => (room.players || {})[id]?.name || "Joueur";
   const tokenOf = (id: string) => { const idx = (mono?.order || []).indexOf(id); return TOKENS[idx % TOKENS.length]; };
   const [rolling, setRolling] = useState(false);

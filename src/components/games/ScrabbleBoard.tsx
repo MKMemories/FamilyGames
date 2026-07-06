@@ -177,10 +177,15 @@ export function ScrabbleBoard({ room, roomId, playerId, isHost, isSolo, onLeave,
   useSoloAI(aiTurn, `${turnIdx}-${fillCount}`, () => {
     if (!aiId || !dict) return;
     const aiRack = (room.gsRacks || {})[aiId] || [];
-    const mv = bestScrabbleMove(toEngine(room.gsBoard), aiRack, dict, diff, Math.random);
-    if (mv) commit(mv.placements, aiId, aiRack);
-    else if ((room.gsBag || []).length >= RACK_SIZE) doExchange(aiId, aiRack, aiRack.map((_, i) => i).slice(0, Math.min(3, aiRack.length)));
-    else passTurn(aiId);
+    try {
+      const mv = bestScrabbleMove(toEngine(room.gsBoard), aiRack, dict, diff, Math.random);
+      if (mv) commit(mv.placements, aiId, aiRack);
+      else if ((room.gsBag || []).length >= RACK_SIZE) doExchange(aiId, aiRack, aiRack.map((_, i) => i).slice(0, Math.min(3, aiRack.length)));
+      else passTurn(aiId);
+    } catch {
+      // Jamais bloquer la partie : en cas de souci, l'IA passe son tour.
+      passTurn(aiId);
+    }
   }, diff === "difficile" ? 900 : diff === "facile" ? 2200 : 1500);
 
   /* ══════════════════════════ RENDER ══════════════════════════ */

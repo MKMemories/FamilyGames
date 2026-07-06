@@ -54,7 +54,8 @@ export function bestScrabbleMove(
   for (const w of dict) { if (w.length >= 2 && w.length <= rackLen) words.push(w); }
 
   const found: Candidate[] = [];
-  let budget = 45000;
+  let budget = 20000;      // nb max de validations complètes
+  let attempts = 90000;    // borne DURE sur le travail total (anti-blocage mobile)
   const consider = (placements: Placement[]) => {
     if (budget-- <= 0) return;
     const res = validateMove(board, placements, dict);
@@ -62,6 +63,7 @@ export function bestScrabbleMove(
   };
 
   const tryLine = (r: number, c: number, dr: number, dc: number, word: string) => {
+    if (--attempts < 0) return;
     // (r,c) = case de départ du mot ; vérifie bornes + prépare fixed[]
     const fixed: (string | null)[] = [];
     for (let i = 0; i < word.length; i++) {
@@ -93,7 +95,7 @@ export function bestScrabbleMove(
         if (c < 0 || c + w.length > BOARD_SIZE) continue;
         tryLine(CENTER, c, 0, 1, w);
       }
-      if (budget <= 0) break;
+      if (budget <= 0 || attempts <= 0) break;
     }
   } else {
     // Coups suivants : accroche chaque mot sur une tuile existante.
@@ -110,9 +112,9 @@ export function bestScrabbleMove(
           // Vertical
           tryLine(ar - i, ac, 1, 0, w);
         }
-        if (budget <= 0) break;
+        if (budget <= 0 || attempts <= 0) break;
       }
-      if (budget <= 0) break;
+      if (budget <= 0 || attempts <= 0) break;
     }
   }
 

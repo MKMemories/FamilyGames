@@ -27,6 +27,7 @@ const Des = lazy(() => import("./components/games/Des").then(m => ({ default: m.
 const Blokus = lazy(() => import("./components/games/Blokus").then(m => ({ default: m.Blokus })));
 const ScrabbleBoard = lazy(() => import("./components/games/ScrabbleBoard").then(m => ({ default: m.ScrabbleBoard })));
 const Monopoly = lazy(() => import("./components/games/Monopoly").then(m => ({ default: m.Monopoly })));
+const Uno = lazy(() => import("./components/games/Uno").then(m => ({ default: m.Uno })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -424,6 +425,9 @@ function App() {
           )}
           {activeGame === "monopoly" && (
             <Monopoly room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {activeGame === "uno" && (
+            <Uno room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
         </Suspense>
       )}
