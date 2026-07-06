@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { MEMBER_PRESETS } from "../lib/gameData";
+import { MEMBER_PRESETS, GAMES } from "../lib/gameData";
 import { Logo } from "./Logo";
 import { Avatar } from "./Avatar";
 import { AvatarStudio } from "./AvatarStudio";
@@ -95,7 +95,7 @@ export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvat
           <div className="logo-sub">KHELIJ</div>
           <p className="home-tagline">Le salon de jeux de la famille — chacun son écran, tous ensemble ✨</p>
           <div className="home-chips">
-            <span>🎮 20 jeux</span>
+            <span>🎮 {GAMES.length} jeux</span>
             <span>👨‍👩‍👧‍👦 2–8 joueurs</span>
             <span>🤖 Solo & multi</span>
           </div>

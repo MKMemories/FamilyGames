@@ -4,11 +4,11 @@ import type { GameId } from "../types";
  *  points selon le classement de chaque manche → un grand vainqueur à la fin. */
 
 /* Jeux party rapides (2–4 joueurs, se terminent sur l'écran de résultats). */
-export const PARTY_POOL: GameId[] = ["quiz", "petitbac", "quidenous", "bombe", "justeprix", "defi", "imposteur"];
+export const PARTY_POOL: GameId[] = ["quiz", "petitbac", "quidenous", "bombe", "justeprix", "defi", "imposteur", "marque"];
 
 /* Nombre minimum de joueurs par jeu du pool. */
 export const PARTY_MIN: Partial<Record<GameId, number>> = {
-  quiz: 2, petitbac: 2, quidenous: 3, bombe: 2, justeprix: 2, defi: 2, imposteur: 3,
+  quiz: 2, petitbac: 2, quidenous: 3, bombe: 2, justeprix: 2, defi: 2, imposteur: 3, marque: 2,
 };
 
 /* Points de soirée attribués selon le rang de la manche (1er → 4e). */

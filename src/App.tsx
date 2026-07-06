@@ -28,6 +28,7 @@ const Blokus = lazy(() => import("./components/games/Blokus").then(m => ({ defau
 const ScrabbleBoard = lazy(() => import("./components/games/ScrabbleBoard").then(m => ({ default: m.ScrabbleBoard })));
 const Monopoly = lazy(() => import("./components/games/Monopoly").then(m => ({ default: m.Monopoly })));
 const Uno = lazy(() => import("./components/games/Uno").then(m => ({ default: m.Uno })));
+const Marque = lazy(() => import("./components/games/Marque").then(m => ({ default: m.Marque })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -420,6 +421,9 @@ function App() {
           {activeGame === "defi" && <Defi room={room} roomId={roomId} playerId={playerId} isHost={isHost} onLeave={leaveRoom} />}
           {activeGame === "justeprix" && (
             <JustePrix room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
+          )}
+          {activeGame === "marque" && (
+            <Marque room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
           {activeGame === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />

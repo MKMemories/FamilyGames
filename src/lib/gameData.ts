@@ -27,6 +27,7 @@ export const GAMES: Game[] = [
   { id: "grandscrabble", name: "Grand Scrabble", emoji: "🔠", desc: "Le vrai Scrabble : plateau 15×15, cases bonus et mots croisés", min: 2, max: 4, color: "#0f766e", grad: "#2dd4bf", cat: "famille", star: true },
   { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#22c55e", grad: "#4ade80", cat: "famille", star: true },
   { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Questions sur la famille, la culture et le monde", min: 2, max: 4, color: "#ec4899", grad: "#f472b6", cat: "famille" },
+  { id: "marque", name: "Devine la Marque", emoji: "🏷️", desc: "Des indices se dévoilent peu à peu — reconnais la grande marque !", min: 1, max: 6, color: "#e11d48", grad: "#fb7185", cat: "famille" },
   { id: "petitbac", name: "Petit Bac", emoji: "🅰️", desc: "Une lettre, des catégories — remplis plus vite que les autres", min: 2, max: 4, color: "#0ea5e9", grad: "#38bdf8", cat: "famille" },
   { id: "bombe", name: "Mot Bombe", emoji: "💣", desc: "Trouve un mot avec la syllabe avant que la bombe explose !", min: 2, max: 4, color: "#f97316", grad: "#fbbf24", cat: "famille" },
   { id: "des", name: "Bluff des Dés", emoji: "🎲", desc: "Mise, bluffe et démasque les menteurs", min: 2, max: 4, color: "#a855f7", grad: "#c084fc", cat: "famille" },
@@ -315,6 +316,7 @@ export function getInitData(game: GameId): Record<string, any> {
     return { defiIdx: 0, defiDeck: deck, timerLeft: DEFIS[deck[0]].timer, timerRunning: false };
   }
   if (game === "justeprix") return { jpRound: 0, jpTotalRounds: 10, jpProduct: null, jpAnswers: {}, jpRevealed: false, jpUsed: [] };
+  if (game === "marque") return { mkRound: 0, mkTotalRounds: 10, mkBrand: null, mkOptions: [], mkAnswers: {}, mkTimes: {}, mkRevealed: false, mkUsed: [] };
   if (game === "dessin") return { dessinManche: 0, dessinTotalManches: 0, dessinMot: null, dessinDessinateur: null, dessinPaths: [], dessinCorrectGuesser: null, dessinRoundActive: false, dessinGuessChat: [] };
   if (game === "scrabble") { const bag = buildBag(); return { bag, racks: {}, currentTurn: 0, roundWord: "", selectedTiles: [], wordHistory: [] }; }
   if (game === "chronovore") return {};

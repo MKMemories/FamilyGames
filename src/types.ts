@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque";
 
 export interface MemberPreset {
   name: string;
@@ -48,6 +48,18 @@ export interface JpProduct {
   emoji?: string;        // visuel (aucune image externe requise)
   source?: string;       // source du prix (ex. « FranceAgriMer 2024 »)
   country?: string;      // pays où le prix s'applique (ex. « France »)
+}
+
+/* ── Devine la Marque ────────────────────── */
+export interface Brand {
+  id: number;
+  name: string;
+  initial: string;       // monogramme (vide → 1re lettre)
+  c1: string;            // couleur signature 1
+  c2: string;            // couleur signature 2
+  emoji: string;         // emoji de secteur (indice)
+  category: string;
+  hint: string;          // indice textuel (dévoilé progressivement)
 }
 
 /* ── Dessinez, c'est gagné ───────────────── */
@@ -149,6 +161,15 @@ export interface Room {
   jpTimes?: Record<string, number>;              // submit timestamp (speed bonus)
   jpRevealed?: boolean;
   jpUsed?: number[];                             // produits déjà tirés dans la partie (non-répétition)
+  /* ── Devine la Marque ── */
+  mkRound?: number;
+  mkTotalRounds?: number;
+  mkBrand?: Brand | null;
+  mkOptions?: string[];
+  mkAnswers?: Record<string, string>;
+  mkTimes?: Record<string, number>;
+  mkRevealed?: boolean;
+  mkUsed?: number[];
   // Dessinez, c'est gagné
   dessinManche?: number;
   dessinTotalManches?: number;
