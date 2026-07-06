@@ -15,7 +15,18 @@ interface Props {
   onLeave: () => void; onToast: (m: string) => void;
 }
 const shuffle = <T,>(a: T[]): T[] => { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
-const DIE = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+
+/* Dé à pips (grille 3×3) qui culbute au lancer. */
+const PIPS: Record<number, number[]> = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+function Die({ v, rolling, dir }: { v: number; rolling: boolean; dir: number }) {
+  return (
+    <motion.div className="mono-die"
+      animate={rolling ? { rotate: [0, dir * 380], scale: [1, 1.18, 1], y: [0, -10, 0] } : { rotate: 0, scale: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: "easeInOut" }}>
+      {Array.from({ length: 9 }).map((_, i) => <span key={i} className={`mono-pip ${PIPS[v]?.includes(i) ? "on" : ""}`} />)}
+    </motion.div>
+  );
+}
 
 /* index de case → cellule (ligne, colonne) sur une grille 11×11 (bord). */
 function cellPos(i: number): [number, number] {
@@ -125,7 +136,9 @@ export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
           <div key={id} className={`mono-wallet ${id === cur && !over ? "cur" : ""} ${mono.players[id].bankrupt ? "bust" : ""}`}>
             <span className="mono-wtok">{tokenOf(id)}</span>
             <span className="mono-wname">{nameOf(id).slice(0, 6)}</span>
-            <span className="mono-wmoney">{mono.players[id].bankrupt ? "✖" : `${mono.players[id].money} €`}</span>
+            <motion.span className="mono-wmoney" key={mono.players[id].money} initial={{ scale: 1.35, color: "#f4c430" }} animate={{ scale: 1, color: "var(--green)" }} transition={{ duration: 0.4 }}>
+              {mono.players[id].bankrupt ? "✖" : `${mono.players[id].money} €`}
+            </motion.span>
           </div>
         ))}
       </div>
@@ -145,16 +158,22 @@ export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
                 <span className="mono-cname">{sp.type === "go" ? "🏁" : sp.type === "jail" ? "🔒" : sp.type === "gotojail" ? "🚔" : sp.type === "parking" ? "🅿️" : sp.type === "chance" ? "❓" : sp.type === "chest" ? "🎁" : sp.type === "tax" ? "💸" : sp.type === "rail" ? "🚉" : sp.type === "util" ? "💡" : sp.short}</span>
                 {owner && <span className="mono-owner" style={{ background: (room.players || {})[owner]?.color || "#999" }} />}
                 {h > 0 && <span className="mono-houses">{h === MAX_HOUSES ? "🏨" : "🏠".repeat(h)}</span>}
-                {here.length > 0 && <span className="mono-tokens">{here.map(id => <span key={id}>{tokenOf(id)}</span>)}</span>}
+                {here.length > 0 && <span className="mono-tokens">{here.map(id => (
+                  <motion.span key={id} initial={{ scale: 0, y: -7 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 520, damping: 15 }}>{tokenOf(id)}</motion.span>
+                ))}</span>}
               </div>
             );
           })}
 
           {/* Panneau central */}
           <div className="mono-center">
+            <div className="mono-center-deco" aria-hidden>
+              <span className="mono-center-glow" />
+              <span className="mono-logo-diamond"><span>MONOPOLY</span><small>KHELIJ</small></span>
+            </div>
             <div className="mono-dice">
-              <motion.span animate={rolling ? { rotate: [0, 360] } : {}} transition={{ duration: 0.5 }}>{DIE[(mono.dice[0] || 1) - 1]}</motion.span>
-              <motion.span animate={rolling ? { rotate: [0, -360] } : {}} transition={{ duration: 0.5 }}>{DIE[(mono.dice[1] || 1) - 1]}</motion.span>
+              <Die v={mono.dice[0] || 1} rolling={rolling} dir={1} />
+              <Die v={mono.dice[1] || 1} rolling={rolling} dir={-1} />
             </div>
             {mono.card && <div className="mono-card">🃏 {mono.card}</div>}
             {!over && (
@@ -215,21 +234,42 @@ const MONO_CSS = `
 
 .mono-board-wrap{display:flex;justify-content:center;}
 .mono-board{position:relative;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);
-  gap:1px;width:min(96vw,540px);aspect-ratio:1;padding:7px;border-radius:16px;
-  background:linear-gradient(160deg,#dfeee4,#c4e0cf);box-shadow:inset 0 1px 2px rgba(40,90,60,.18),0 14px 34px rgba(0,0,0,.2);}
-.mono-cell{position:relative;background:#f7faf6;border-radius:2.5px;overflow:hidden;display:flex;flex-direction:column;
+  gap:1px;width:min(96vw,540px);aspect-ratio:1;padding:9px;border-radius:18px;
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.35), transparent 40%),
+    linear-gradient(160deg,#e6f2ea,#bcdcc8 60%,#a9d0b9);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.5),inset 0 2px 6px rgba(40,90,60,.2),0 18px 40px rgba(20,60,40,.28);}
+.mono-cell{position:relative;background:linear-gradient(180deg,#fdfefb,#f2f6ef);border-radius:3px;overflow:hidden;display:flex;flex-direction:column;
   align-items:center;justify-content:center;font-size:clamp(.34rem,1.5vw,.56rem);text-align:center;padding:1px;color:#26332c;
-  box-shadow:inset 0 0 0 .5px rgba(40,80,55,.08);}
-.mono-cell.active{box-shadow:inset 0 0 0 2px var(--accent);}
-.mono-band{position:absolute;top:0;left:0;right:0;height:22%;}
+  box-shadow:inset 0 0 0 .5px rgba(40,80,55,.1),0 1px 1px rgba(0,0,0,.04);}
+.mono-cell.active{z-index:3;box-shadow:inset 0 0 0 2px var(--accent),0 0 12px color-mix(in srgb,var(--accent) 55%,transparent);animation:monoActive 1.2s ease-in-out infinite;}
+@keyframes monoActive{0%,100%{box-shadow:inset 0 0 0 2px var(--accent),0 0 8px color-mix(in srgb,var(--accent) 40%,transparent);}50%{box-shadow:inset 0 0 0 2px var(--accent),0 0 18px 3px color-mix(in srgb,var(--accent) 65%,transparent);}}
+@media (prefers-reduced-motion: reduce){.mono-cell.active{animation:none;}}
+.mono-band{position:absolute;top:0;left:0;right:0;height:22%;box-shadow:inset 0 -1px 2px rgba(0,0,0,.15);}
 .mono-cname{margin-top:18%;font-weight:700;line-height:1;overflow:hidden;}
-.mono-owner{position:absolute;bottom:1px;left:1px;width:5px;height:5px;border-radius:50%;}
+.mono-owner{position:absolute;bottom:1px;left:1px;width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.7),0 1px 2px rgba(0,0,0,.3);}
 .mono-houses{position:absolute;top:22%;left:0;right:0;font-size:.5em;line-height:1;}
-.mono-tokens{position:absolute;bottom:0;right:0;display:flex;flex-wrap:wrap;justify-content:flex-end;font-size:clamp(.5rem,2vw,.8rem);line-height:.9;}
+.mono-tokens{position:absolute;bottom:0;right:0;display:flex;flex-wrap:wrap;justify-content:flex-end;font-size:clamp(.5rem,2vw,.85rem);line-height:.9;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));}
 
-.mono-center{grid-row:2 / 11;grid-column:2 / 11;background:linear-gradient(160deg,var(--surface-1),var(--surface-2,var(--surface-1)));
-  border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;padding:.6rem;text-align:center;}
-.mono-dice{display:flex;gap:.4rem;font-size:clamp(1.6rem,7vw,2.6rem);line-height:1;color:var(--text);}
+.mono-center{grid-row:2 / 11;grid-column:2 / 11;position:relative;overflow:hidden;border-radius:12px;
+  background:radial-gradient(130% 110% at 50% 0%, color-mix(in srgb,var(--accent) 12%, var(--surface-1)), var(--surface-1));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;padding:.7rem;text-align:center;
+  box-shadow:inset 0 0 0 1px var(--border),inset 0 2px 12px rgba(0,0,0,.06);}
+.mono-center>*:not(.mono-center-deco){position:relative;z-index:1;}
+.mono-center-deco{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:0;}
+.mono-center-glow{position:absolute;width:70%;height:45%;border-radius:50%;background:radial-gradient(circle, color-mix(in srgb,var(--accent) 40%,transparent),transparent 70%);filter:blur(24px);opacity:.6;animation:monoGlow 4s ease-in-out infinite;}
+@keyframes monoGlow{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:.7;transform:scale(1.12);}}
+.mono-logo-diamond{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:1.3rem 1.5rem;border:3px solid color-mix(in srgb,var(--primary) 45%,transparent);border-radius:10px;opacity:.13;}
+.mono-logo-diamond span{font-family:var(--font-d);font-size:clamp(.9rem,4vw,1.4rem);letter-spacing:.04em;color:var(--primary);white-space:nowrap;line-height:1;}
+.mono-logo-diamond small{font-family:var(--font-d);font-size:.72rem;color:var(--accent);}
+@media (prefers-reduced-motion: reduce){.mono-center-glow{animation:none;}}
+.mono-dice{display:flex;gap:.7rem;line-height:1;}
+.mono-die{width:clamp(38px,11vw,52px);aspect-ratio:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:1px;padding:15%;
+  background:linear-gradient(150deg,#ffffff,#e7ecf2);border-radius:24%;
+  box-shadow:0 6px 14px rgba(0,0,0,.32),inset 0 2px 3px rgba(255,255,255,.95),inset 0 -3px 6px rgba(0,0,0,.14);}
+.mono-pip{border-radius:50%;}
+.mono-pip.on{background:radial-gradient(circle at 35% 32%,#464b59,#0f1119);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 1px 1px rgba(0,0,0,.2);}
 .mono-card{font-size:.72rem;color:var(--muted);max-width:90%;line-height:1.2;background:var(--surface-2,rgba(0,0,0,.04));padding:.3rem .5rem;border-radius:8px;}
 .mono-prompt{font-size:.9rem;font-weight:800;color:var(--text);}
 .mono-prompt.mono-win{font-family:var(--font-d);color:var(--accent);font-size:1.05rem;}
