@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
 import { dbRef, set, get, onValue, update, remove, removeOnDisconnect, cancelOnDisconnect } from "./lib/firebase";
 import { uid, getInitData, buildBag, MEMBER_PRESETS, GAMES, AI_PLAYER, gameSupportsAI } from "./lib/gameData";
 import { HomeScreen } from "./components/HomeScreen";
@@ -6,23 +6,25 @@ import { PickScreen } from "./components/PickScreen";
 import { SetupScreen } from "./components/SetupScreen";
 import { LobbyScreen } from "./components/LobbyScreen";
 import { ResultScreen } from "./components/ResultScreen";
-import { Connect4 } from "./components/games/Connect4";
-import { Checkers } from "./components/games/Checkers";
-import { Chess } from "./components/games/Chess";
-import { Scrabble } from "./components/games/Scrabble";
-import { Quiz } from "./components/games/Quiz";
-import { Defi } from "./components/games/Defi";
-import { JustePrix } from "./components/games/JustePrix";
-import { Dessin } from "./components/games/Dessin";
-import { Chronovore } from "./components/games/Chronovore";
-import { Imposteur } from "./components/games/Imposteur";
-import { QuiDeNous } from "./components/games/QuiDeNous";
-import { BatailleNavale } from "./components/games/BatailleNavale";
-import { Morpion } from "./components/games/Morpion";
-import { PetitBac } from "./components/games/PetitBac";
-import { Bombe } from "./components/games/Bombe";
-import { Des } from "./components/games/Des";
-import { Blokus } from "./components/games/Blokus";
+/* Chaque jeu est chargé à la demande (code-splitting) → démarrage instantané ;
+   les gros jeux (ex. Chronovore/Three.js) ne pèsent plus sur le bundle initial. */
+const Connect4 = lazy(() => import("./components/games/Connect4").then(m => ({ default: m.Connect4 })));
+const Checkers = lazy(() => import("./components/games/Checkers").then(m => ({ default: m.Checkers })));
+const Chess = lazy(() => import("./components/games/Chess").then(m => ({ default: m.Chess })));
+const Scrabble = lazy(() => import("./components/games/Scrabble").then(m => ({ default: m.Scrabble })));
+const Quiz = lazy(() => import("./components/games/Quiz").then(m => ({ default: m.Quiz })));
+const Defi = lazy(() => import("./components/games/Defi").then(m => ({ default: m.Defi })));
+const JustePrix = lazy(() => import("./components/games/JustePrix").then(m => ({ default: m.JustePrix })));
+const Dessin = lazy(() => import("./components/games/Dessin").then(m => ({ default: m.Dessin })));
+const Chronovore = lazy(() => import("./components/games/Chronovore").then(m => ({ default: m.Chronovore })));
+const Imposteur = lazy(() => import("./components/games/Imposteur").then(m => ({ default: m.Imposteur })));
+const QuiDeNous = lazy(() => import("./components/games/QuiDeNous").then(m => ({ default: m.QuiDeNous })));
+const BatailleNavale = lazy(() => import("./components/games/BatailleNavale").then(m => ({ default: m.BatailleNavale })));
+const Morpion = lazy(() => import("./components/games/Morpion").then(m => ({ default: m.Morpion })));
+const PetitBac = lazy(() => import("./components/games/PetitBac").then(m => ({ default: m.PetitBac })));
+const Bombe = lazy(() => import("./components/games/Bombe").then(m => ({ default: m.Bombe })));
+const Des = lazy(() => import("./components/games/Des").then(m => ({ default: m.Des })));
+const Blokus = lazy(() => import("./components/games/Blokus").then(m => ({ default: m.Blokus })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -364,7 +366,7 @@ function App() {
       )}
 
       {screen === "game" && room && activeGame && roomId && playerId && (
-        <>
+        <Suspense fallback={<div className="screen" style={{ display: "grid", placeItems: "center" }}><div className="spinner" /></div>}>
           {activeGame !== "chronovore" && <RulesSheet gameId={activeGame} />}
           {activeGame === "connect4" && <Connect4 room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
           {activeGame === "checkers" && <Checkers room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
@@ -415,7 +417,7 @@ function App() {
           {activeGame === "blokus" && (
             <Blokus room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-        </>
+        </Suspense>
       )}
 
       {screen === "result" && room && (

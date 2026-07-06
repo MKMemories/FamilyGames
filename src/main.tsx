@@ -7,3 +7,10 @@ import "./index.css";
 applyTheme(getInitialTheme());
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// PWA : enregistre le service worker (app installable + hors-ligne).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
