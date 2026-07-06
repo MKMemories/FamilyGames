@@ -3,7 +3,7 @@ import type { Game, MemberPreset, GameId, Difficulty, StoredQuizQuestion } from 
 /* ── Solo vs Ordinateur ── */
 export const AI_ID = "zzz-ai";
 export const AI_PLAYER = { id: AI_ID, name: "Ordinateur", color: "#8b93a7", emoji: "🤖" };
-export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus", "grandscrabble", "monopoly", "uno", "memory"]);
+export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus", "grandscrabble", "monopoly", "uno", "memory", "motmystere"]);
 export function gameSupportsAI(g: GameId): boolean { return AI_GAMES.has(g); }
 export const DIFFICULTIES: { id: Difficulty; label: string; emoji: string; desc: string }[] = [
   { id: "facile", label: "Facile", emoji: "🙂", desc: "L'ordinateur joue simplement" },
@@ -38,6 +38,7 @@ export const GAMES: Game[] = [
   { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#f43f5e", grad: "#fb7185", cat: "famille" },
   { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#10b981", grad: "#34d399", cat: "famille" },
   { id: "memory", name: "Memory des Paires", emoji: "🃏", desc: "Retrouve les paires cachées — le plus de mémoire gagne !", min: 1, max: 4, color: "#8b5cf6", grad: "#a78bfa", cat: "famille" },
+  { id: "motmystere", name: "Le Mot Mystère", emoji: "🔡", desc: "Devine le mot caché de 5 lettres — vert, jaune, gris te guident !", min: 1, max: 4, color: "#0891b2", grad: "#22d3ee", cat: "famille" },
   /* ── ⚔️ DUEL (2 joueurs) ── */
   { id: "chess", name: "Échecs", emoji: "♟️", desc: "Échecs classique 8×8 — rois, reines, stratégie", min: 2, max: 2, color: "#6366f1", grad: "#818cf8", cat: "duo" },
   { id: "checkers", name: "Dames", emoji: "⬛", desc: "Jeu de dames — captures et dames couronnées", min: 2, max: 2, color: "#f59e0b", grad: "#fbbf24", cat: "duo" },
@@ -440,6 +441,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "monopoly") return { mono: null };
   if (game === "uno") return { uno: null };
   if (game === "memory") return { mmCards: null, mmMatched: [], mmUp: [], mmTurn: 0, mmOrder: [], mmPairs: {} };
+  if (game === "motmystere") return { wmWord: null, wmRound: 0, wmTotalRounds: 6, wmGuesses: {}, wmDone: {}, wmSolved: {}, wmTimes: {}, wmRevealed: false, wmUsed: [] };
   return {};
 }
 

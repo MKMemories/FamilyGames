@@ -30,6 +30,7 @@ const Monopoly = lazy(() => import("./components/games/Monopoly").then(m => ({ d
 const Uno = lazy(() => import("./components/games/Uno").then(m => ({ default: m.Uno })));
 const Marque = lazy(() => import("./components/games/Marque").then(m => ({ default: m.Marque })));
 const Memory = lazy(() => import("./components/games/Memory").then(m => ({ default: m.Memory })));
+const MotMystere = lazy(() => import("./components/games/MotMystere").then(m => ({ default: m.MotMystere })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -447,6 +448,9 @@ function App() {
           )}
           {activeGame === "memory" && (
             <Memory room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {activeGame === "motmystere" && (
+            <MotMystere room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
           {activeGame === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />

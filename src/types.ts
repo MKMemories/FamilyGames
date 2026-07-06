@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result" | "palmares";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere";
 
 export interface MemberPreset {
   name: string;
@@ -152,6 +152,16 @@ export interface Room {
   mmTurn?: number;                  // index dans mmOrder
   mmOrder?: string[];
   mmPairs?: Record<string, number>; // paires trouvées par joueur
+  // Le Mot Mystère (course : même mot pour tous, chacun devine de son côté)
+  wmWord?: string | null;           // solution de la manche (5 lettres)
+  wmRound?: number;
+  wmTotalRounds?: number;
+  wmGuesses?: Record<string, string[]>; // essais par joueur
+  wmDone?: Record<string, boolean>;     // joueur a terminé (trouvé ou 6 essais)
+  wmSolved?: Record<string, number>;    // nb d'essais utilisés si trouvé
+  wmTimes?: Record<string, number>;     // horodatage de résolution (ordre/vitesse)
+  wmRevealed?: boolean;                 // manche dévoilée
+  wmUsed?: number[];                    // mots déjà tirés (non-répétition)
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round
