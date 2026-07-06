@@ -10,6 +10,8 @@ import bombe from "../assets/icons/bombe.webp";
 import des from "../assets/icons/des.webp";
 import dessin from "../assets/icons/dessin.webp";
 import grandscrabble from "../assets/icons/grandscrabble.webp";
+import imposteur from "../assets/icons/imposteur.webp";
+import blokus from "../assets/icons/blokus.webp";
 
 export const GAME_ICONS: Partial<Record<GameId, string>> = {
   uno,
@@ -20,6 +22,8 @@ export const GAME_ICONS: Partial<Record<GameId, string>> = {
   des,
   dessin,
   grandscrabble,
+  imposteur,
+  blokus,
 };
 
 export function gameIcon(id: GameId): string | undefined {
