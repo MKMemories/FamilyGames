@@ -1684,6 +1684,12 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
   color: #4a2d00; font-size: .56rem; font-weight: 900; letter-spacing: .03em;
   padding: .12rem 1.7rem; box-shadow: 0 3px 8px rgba(0,0,0,.22);
 }
+.game-playtime {
+  position: absolute; top: .5rem; right: .5rem; z-index: 2;
+  background: color-mix(in srgb, var(--gc) 82%, #000); color: #fff;
+  font-size: .58rem; font-weight: 900; letter-spacing: .02em;
+  padding: .16rem .42rem; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.28);
+}
 
 /* Hero d'accueil premium */
 .home-screen { position: relative; }

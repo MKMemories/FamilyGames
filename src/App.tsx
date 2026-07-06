@@ -34,6 +34,7 @@ import { SoundToggle } from "./components/SoundToggle";
 import { RulesSheet } from "./components/RulesSheet";
 import { useTheme } from "./hooks/useTheme";
 import { rankPoints, accumulate, pickNextPartyGame, canParty } from "./lib/party";
+import { recordPlay } from "./lib/gameStats";
 import type { AppState, GameId, Room, Difficulty } from "./types";
 
 /* ── Reprise de session : on garde de quoi rejoindre le salon après un
@@ -67,6 +68,7 @@ function App() {
   });
   const [toast, setToast] = useState("");
   const unsubs = useRef<(() => void)[]>([]);
+  const playRef = useRef<{ game: GameId; t: number } | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
 
   const showToast = (msg: string) => setToast(msg);
@@ -325,6 +327,29 @@ function App() {
   const isHost = room && playerId ? room.hostId === playerId : state.isHost;
   // Le jeu actif suit room.game (le mode Soirée le change entre deux manches).
   const activeGame = (room?.game ?? game) as GameId | null;
+
+  /* ── Statistiques de temps de jeu (local) : on chronomètre chaque jeu tant
+     qu'on est sur l'écran de partie, pour remonter les plus joués en tête. ── */
+  useEffect(() => {
+    const now = Date.now();
+    const cur = playRef.current;
+    if (screen === "game" && activeGame) {
+      if (!cur || cur.game !== activeGame) {
+        if (cur) recordPlay(cur.game, (now - cur.t) / 1000, now);   // changement de jeu (Soirée)
+        playRef.current = { game: activeGame, t: now };
+      }
+    } else if (cur) {
+      recordPlay(cur.game, (now - cur.t) / 1000, now);              // on quitte la partie
+      playRef.current = null;
+    }
+  }, [screen, activeGame]);
+
+  /* Sauvegarde la session en cours si l'onglet se ferme/masque. */
+  useEffect(() => {
+    const flush = () => { const c = playRef.current; if (c && document.visibilityState === "hidden") { recordPlay(c.game, (Date.now() - c.t) / 1000, Date.now()); playRef.current = null; } };
+    document.addEventListener("visibilitychange", flush);
+    return () => document.removeEventListener("visibilitychange", flush);
+  }, []);
 
   return (
     <>
