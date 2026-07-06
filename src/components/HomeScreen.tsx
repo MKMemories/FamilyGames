@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { MEMBER_PRESETS, GAMES } from "../lib/gameData";
 import { Logo } from "./Logo";
+import heroClay from "../assets/hero-clay.webp";
 import { Avatar } from "./Avatar";
 import { AvatarStudio } from "./AvatarStudio";
 import {
@@ -81,13 +82,15 @@ export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvat
   return (
     <div className="screen home-screen">
       <div className="home-aurora" aria-hidden />
-      <div className="home-deco">
-        <span>🎲</span><span>🃏</span><span>♟️</span><span>🔤</span><span>⏱️</span><span>🧠</span>
-      </div>
 
       <motion.div className="home-content" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 26 }}>
-        <div className="home-logo">
+        <motion.div className="home-hero" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 24 }}>
+          <img className="home-hero-img" src={heroClay} alt="" aria-hidden />
+          <span className="home-hero-scrim" aria-hidden />
+        </motion.div>
+        <div className="home-logo home-logo--hero">
           <motion.div className="logo-badge" initial={{ scale: 0, rotate: -25 }} animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.05 }}>
             <Logo size={92} idSuffix="home" />
