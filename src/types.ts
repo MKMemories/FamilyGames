@@ -108,6 +108,11 @@ export interface Room {
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round
+  // Mode Soirée famille (enchaînement de jeux, score cumulé)
+  partyMode?: boolean;
+  partyScores?: Record<string, number>;              // cumul de points de soirée
+  partyIndex?: number;                               // nombre de jeux déjà joués
+  partyFinished?: boolean;                           // grand final atteint
   // Defi
   defiIdx?: number;
   defiDeck?: number[];

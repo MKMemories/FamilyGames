@@ -28,6 +28,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
 import { RulesSheet } from "./components/RulesSheet";
 import { useTheme } from "./hooks/useTheme";
+import { rankPoints, accumulate, pickNextPartyGame, canParty } from "./lib/party";
 import type { AppState, GameId, Room, Difficulty } from "./types";
 
 /* ── Reprise de session : on garde de quoi rejoindre le salon après un
@@ -273,6 +274,39 @@ function App() {
     }
   };
 
+  /* ── Soirée famille : enchaîne un nouveau jeu en cumulant les points. ── */
+  const partyAdvance = async (initParty: boolean) => {
+    const { room, roomId } = state;
+    if (!room || !room.game || !roomId) return;
+    const playerIds = Object.keys(room.players || {});
+    const gained = rankPoints(room.scores || {}, playerIds);
+    const partyScores = accumulate(initParty ? {} : (room.partyScores || {}), gained);
+    const next = pickNextPartyGame(playerIds.length, room.game, Math.random());
+    const freshScores: Record<string, number> = {};
+    playerIds.forEach(id => { freshScores[id] = 0; });
+    await update(dbRef(`games/${roomId}`), {
+      game: next,
+      ...getInitData(next),
+      scores: freshScores,
+      status: "playing",
+      winner: null,
+      partyMode: true,
+      partyScores,
+      partyIndex: (room.partyIndex || 0) + 1,
+      partyFinished: false,
+    });
+  };
+  const partyEnd = async () => {
+    const { room, roomId } = state;
+    if (!room || !roomId) return;
+    const playerIds = Object.keys(room.players || {});
+    const gained = rankPoints(room.scores || {}, playerIds);
+    const partyScores = accumulate(room.partyScores || {}, gained);
+    const winnerId = [...playerIds].sort((a, b) => (partyScores[b] || 0) - (partyScores[a] || 0))[0];
+    const winner = (room.players || {})[winnerId]?.name || "?";
+    await update(dbRef(`games/${roomId}`), { partyScores, partyFinished: true, winner });
+  };
+
   const handleSelectPlayer = (name: string, color: string) => {
     const id = name ? (MEMBER_PRESETS.find(m => m.name === name) ? name : name + Math.floor(Math.random() * 100)) : "";
     setState(s => ({ ...s, playerName: name || null, playerColor: color || null, playerId: id || null }));
@@ -282,6 +316,8 @@ function App() {
   // L'hôte est DÉRIVÉ de room.hostId → la migration d'hôte prend effet
   // instantanément partout (sinon l'ancien hôte parti fige la partie).
   const isHost = room && playerId ? room.hostId === playerId : state.isHost;
+  // Le jeu actif suit room.game (le mode Soirée le change entre deux manches).
+  const activeGame = (room?.game ?? game) as GameId | null;
 
   return (
     <>
@@ -327,56 +363,56 @@ function App() {
         />
       )}
 
-      {screen === "game" && room && game && roomId && playerId && (
+      {screen === "game" && room && activeGame && roomId && playerId && (
         <>
-          {game !== "chronovore" && <RulesSheet gameId={game} />}
-          {game === "connect4" && <Connect4 room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
-          {game === "checkers" && <Checkers room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
-          {game === "chess" && <Chess room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
-          {game === "scrabble" && (
+          {activeGame !== "chronovore" && <RulesSheet gameId={activeGame} />}
+          {activeGame === "connect4" && <Connect4 room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
+          {activeGame === "checkers" && <Checkers room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
+          {activeGame === "chess" && <Chess room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
+          {activeGame === "scrabble" && (
             <Scrabble
               room={room} roomId={roomId} playerId={playerId}
               isHost={isHost} isSolo={isSolo}
               onLeave={leaveRoom} onToast={showToast}
             />
           )}
-          {game === "quiz" && (
+          {activeGame === "quiz" && (
             <Quiz
               room={room} roomId={roomId} playerId={playerId}
               isHost={isHost} isSolo={isSolo}
               onLeave={leaveRoom}
             />
           )}
-          {game === "defi" && <Defi room={room} roomId={roomId} playerId={playerId} isHost={isHost} onLeave={leaveRoom} />}
-          {game === "justeprix" && (
+          {activeGame === "defi" && <Defi room={room} roomId={roomId} playerId={playerId} isHost={isHost} onLeave={leaveRoom} />}
+          {activeGame === "justeprix" && (
             <JustePrix room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
-          {game === "dessin" && (
+          {activeGame === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
-          {game === "chronovore" && <Chronovore onLeave={leaveRoom} />}
-          {game === "imposteur" && (
+          {activeGame === "chronovore" && <Chronovore onLeave={leaveRoom} />}
+          {activeGame === "imposteur" && (
             <Imposteur room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "quidenous" && (
+          {activeGame === "quidenous" && (
             <QuiDeNous room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "bataille" && (
+          {activeGame === "bataille" && (
             <BatailleNavale room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "morpion" && (
+          {activeGame === "morpion" && (
             <Morpion room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "petitbac" && (
+          {activeGame === "petitbac" && (
             <PetitBac room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "bombe" && (
+          {activeGame === "bombe" && (
             <Bombe room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "des" && (
+          {activeGame === "des" && (
             <Des room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
-          {game === "blokus" && (
+          {activeGame === "blokus" && (
             <Blokus room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
         </>
@@ -386,8 +422,12 @@ function App() {
         <ResultScreen
           room={room}
           isHost={isHost}
+          canParty={!isSolo && !!activeGame && canParty(activeGame, Object.keys(room.players || {}).length)}
           onRestart={restartGame}
           onHome={leaveRoom}
+          onPartyStart={() => partyAdvance(true)}
+          onPartyNext={() => partyAdvance(false)}
+          onPartyEnd={partyEnd}
         />
       )}
 

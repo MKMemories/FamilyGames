@@ -1,13 +1,18 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { fx } from "../lib/sound";
+import { rankPoints, accumulate } from "../lib/party";
 import type { Room, Player } from "../types";
 
 interface ResultScreenProps {
   room: Room;
   isHost: boolean;
+  canParty?: boolean;
   onRestart: () => void;
   onHome: () => void;
+  onPartyStart?: () => void;
+  onPartyNext?: () => void;
+  onPartyEnd?: () => void;
 }
 
 /* Deterministic confetti + streamers so they don't reshuffle on re-render */
@@ -28,10 +33,16 @@ const BAR_H = [150, 106, 74];
 const BAR_CLR = ["linear-gradient(180deg,#ffe27a,#f0ab34)", "linear-gradient(180deg,#e6ecff,#aeb7d6)", "linear-gradient(180deg,#f0b98a,#c97f45)"];
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 
-export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenProps) {
+export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPartyStart, onPartyNext, onPartyEnd }: ResultScreenProps) {
   useEffect(() => { fx("victory"); }, []);
-  const scores = room.scores || {};
   const allPlayers = Object.values(room.players || {});
+  const partyInProgress = !!room.partyMode && !room.partyFinished;
+  const partyDone = !!room.partyFinished;
+
+  // Le grand podium final classe sur le CUMUL de soirée ; sinon sur le jeu.
+  const scores = partyDone ? (room.partyScores || {}) : (room.scores || {});
+  // Classement Soirée projeté (cumul + points de la manche en cours).
+  const projectedParty = accumulate(room.partyScores || {}, rankPoints(room.scores || {}, allPlayers.map(p => p.id)));
 
   const sorted: Player[] = [...allPlayers].sort((a, b) => {
     if (room.winner) {
@@ -91,7 +102,7 @@ export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
         >
-          {isDraw ? "Égalité !" : "Partie terminée !"}
+          {partyDone ? "🎉 Soirée terminée !" : isDraw ? "Égalité !" : "Partie terminée !"}
         </motion.h2>
         {winner && !isDraw && (
           <motion.div
@@ -173,6 +184,26 @@ export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenPr
         ))}
       </motion.div>
 
+      {/* Classement de la soirée (pendant une soirée en cours) */}
+      {partyInProgress && (
+        <motion.div
+          className="party-standings"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.5 }}
+        >
+          <div className="party-standings-title">🎉 Classement de la soirée</div>
+          {[...allPlayers].sort((a, b) => (projectedParty[b.id] || 0) - (projectedParty[a.id] || 0)).map((p, i) => (
+            <div key={p.id} className="party-standings-row">
+              <span className="psr-rank">{i + 1}.</span>
+              <span className="psr-emoji">{p.emoji}</span>
+              <span className="psr-name" style={{ color: p.color || "var(--text)" }}>{p.name}</span>
+              <span className="psr-pts">{projectedParty[p.id] || 0} pts</span>
+            </div>
+          ))}
+        </motion.div>
+      )}
+
       {/* Actions */}
       <motion.div
         className="podium-actions"
@@ -180,11 +211,35 @@ export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenPr
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.9 }}
       >
-        {isHost && (
-          <button className="btn btn-primary" onClick={onRestart}>🔄 Rejouer</button>
+        {isHost && partyInProgress && (
+          <>
+            <button className="btn btn-primary" onClick={onPartyNext}>🎮 Jeu suivant →</button>
+            <button className="btn btn-ghost" onClick={onPartyEnd}>🏁 Terminer la soirée</button>
+          </>
+        )}
+        {isHost && !partyInProgress && (
+          <>
+            <button className="btn btn-primary" onClick={onRestart}>🔄 Rejouer</button>
+            {!partyDone && canParty && (
+              <button className="btn btn-accent" onClick={onPartyStart}>🎉 Soirée famille</button>
+            )}
+          </>
+        )}
+        {!isHost && partyInProgress && (
+          <div className="waiting-host">⏳ L'hôte enchaîne la soirée…</div>
         )}
         <button className="btn btn-ghost podium-home-btn" onClick={onHome}>🏠 Accueil</button>
       </motion.div>
+
+      <style>{`
+        .party-standings{max-width:340px;margin:.4rem auto 0;width:calc(100% - 2rem);
+          background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:.7rem .9rem;box-shadow:var(--shadow);}
+        .party-standings-title{font-family:var(--font-d);font-size:.95rem;text-align:center;margin-bottom:.45rem;color:var(--accent);}
+        .party-standings-row{display:flex;align-items:center;gap:.5rem;padding:.22rem 0;font-weight:800;font-size:.9rem;}
+        .psr-rank{color:var(--muted);width:22px;}
+        .psr-name{flex:1;}
+        .psr-pts{font-family:var(--font-d);color:var(--text);}
+      `}</style>
     </div>
   );
 }
