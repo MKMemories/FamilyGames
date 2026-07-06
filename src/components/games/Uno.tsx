@@ -103,42 +103,71 @@ export function Uno({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }
   const t = top(uno);
   const others = uno.order.filter(id => id !== playerId);
 
+  const activeHex = COLOR_HEX[uno.activeColor];
+  const throwAngle = ((uno.discard.length * 47) % 60) - 30; // angle de lancer « aléatoire » stable
+
   return (
-    <div className="screen game-screen uno-screen">
+    <div className="screen game-screen uno-screen" style={{ ["--uno-active" as string]: activeHex }}>
+      {/* Décor : tapis de jeu, halo à la couleur active, particules */}
+      <div className="uno-felt" aria-hidden>
+        <span className="uno-felt-glow" />
+        <span className="uno-felt-vign" />
+        {[...Array(9)].map((_, i) => <span key={i} className={`uno-particle p${i}`} />)}
+        <span className="uno-felt-mark">UNO</span>
+      </div>
+
       <div className="game-topbar">
         <button className="btn-back" onClick={onLeave}>✕</button>
         <div className="turn-indicator" style={{ background: isMyTurn && !over ? "rgba(36,178,107,.18)" : "rgba(0,0,0,.05)" }}>
           {over ? `🏆 ${nameOf(uno.winner || "")} gagne !` : isMyTurn ? "🟢 Ton tour !" : `⏳ ${nameOf(cur)}`}
         </div>
-        <div className="uno-dir">{uno.dir === 1 ? "⟳" : "⟲"}</div>
+        <motion.div className="uno-dir" key={uno.dir} animate={{ rotate: uno.dir === 1 ? [0, 360] : [0, -360] }} transition={{ duration: 0.6 }}>
+          {uno.dir === 1 ? "⟳" : "⟲"}
+        </motion.div>
       </div>
 
       {/* Adversaires */}
       <div className="uno-opponents">
-        {others.map(id => (
-          <div key={id} className={`uno-opp ${id === cur && !over ? "cur" : ""}`}>
-            <span className="uno-opp-name">{nameOf(id).slice(0, 7)}</span>
-            <div className="uno-opp-cards">
-              {Array.from({ length: Math.min(uno.hands[id]?.length || 0, 7) }).map((_, i) => <span key={i} className="uno-back-mini" />)}
-            </div>
-            <span className={`uno-opp-count ${(uno.hands[id]?.length || 0) === 1 ? "uno1" : ""}`}>{uno.hands[id]?.length || 0}{(uno.hands[id]?.length || 0) === 1 ? " · UNO" : ""}</span>
-          </div>
-        ))}
+        {others.map(id => {
+          const n = uno.hands[id]?.length || 0;
+          const isCur = id === cur && !over;
+          return (
+            <motion.div key={id} className={`uno-opp ${isCur ? "cur" : ""}`} animate={isCur ? { scale: [1, 1.05, 1] } : { scale: 1 }} transition={{ duration: 1.1, repeat: isCur ? Infinity : 0 }}>
+              <span className="uno-opp-name">{id === aiId ? "🤖 Ordi" : nameOf(id).slice(0, 8)}</span>
+              <div className="uno-opp-cards">
+                {Array.from({ length: Math.min(n, 8) }).map((_, i) => <span key={i} className="uno-back-mini" />)}
+              </div>
+              <span className={`uno-opp-count ${n === 1 ? "uno1" : ""}`}>{n}{n === 1 ? " · UNO !" : " cartes"}</span>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Centre : pioche + défausse */}
-      <div className="uno-center">
-        <button className="uno-draw-pile" onClick={draw} disabled={!isMyTurn || over} title="Piocher">
-          <span className="uno-back-logo">UNO</span>
-          <span className="uno-draw-count">{uno.draw.length}</span>
-        </button>
-        <div className="uno-discard">
-          <AnimatePresence mode="popLayout">
-            <motion.div key={uno.discard.length + t.c + t.v} initial={{ scale: 0.6, rotate: -12, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 320, damping: 20 }}>
-              <Card card={t.c === "w" ? { c: uno.activeColor, v: t.v } : t} big />
-            </motion.div>
-          </AnimatePresence>
-          <span className="uno-active-color" style={{ background: COLOR_HEX[uno.activeColor] }} title={COLOR_NAME[uno.activeColor]} />
+      {/* Table centrale : pioche + défausse posées sur le tapis */}
+      <div className="uno-table">
+        <span className="uno-table-ring" />
+        <div className="uno-center">
+          <motion.button className={`uno-draw-pile ${isMyTurn && !over ? "glow" : ""}`} onClick={draw} disabled={!isMyTurn || over} title="Piocher"
+            whileTap={{ scale: 0.92 }}>
+            <span className="uno-pile-shadow" />
+            <span className="uno-back-logo">UNO</span>
+            <span className="uno-draw-count">{uno.draw.length}</span>
+          </motion.button>
+
+          <div className="uno-discard">
+            {/* Épaisseur de la pile (cartes fantômes dessous) */}
+            <span className="uno-stack s1" /><span className="uno-stack s2" />
+            <AnimatePresence mode="popLayout">
+              <motion.div key={uno.discard.length + t.c + t.v} className="uno-thrown"
+                initial={{ x: throwAngle, y: -46, scale: 0.5, rotate: throwAngle, opacity: 0 }}
+                animate={{ x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18 }}>
+                <Card card={t.c === "w" ? { c: uno.activeColor, v: t.v } : t} big />
+              </motion.div>
+            </AnimatePresence>
+            <motion.span className="uno-active-color" style={{ background: activeHex }} title={COLOR_NAME[uno.activeColor]}
+              key={uno.activeColor} initial={{ scale: 0 }} animate={{ scale: [0, 1.4, 1] }} transition={{ duration: 0.4 }} />
+          </div>
         </div>
       </div>
 
@@ -148,12 +177,15 @@ export function Uno({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }
         {isMyTurn && !over && myHand.length === 2 && !uno.saidUno[playerId] && <button className="uno-btn uno-btn-uno" onClick={sayUno}>UNO !</button>}
       </div>
 
-      {/* Ma main */}
+      {/* Ma main — distribuée en éventail, entrée animée */}
       <div className="uno-hand">
         {myHand.map((card, i) => {
           const canPlay = isMyTurn && !over && playable(uno, playerId, card);
           return (
-            <motion.div key={i} className="uno-hand-card" whileHover={canPlay ? { y: -14 } : {}} style={{ zIndex: i }}>
+            <motion.div key={i} className="uno-hand-card" style={{ zIndex: i }}
+              initial={{ y: 46, opacity: 0, rotate: -6 }} animate={{ y: 0, opacity: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 26, delay: Math.min(i * 0.035, 0.3) }}
+              whileHover={canPlay ? { y: -16, scale: 1.06 } : {}}>
               <Card card={card} dim={isMyTurn && !over && !canPlay} onClick={canPlay ? () => play(i) : undefined} />
             </motion.div>
           );
@@ -183,35 +215,80 @@ export function Uno({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }
 }
 
 const UNO_CSS = `
-.uno-screen{max-width:600px;margin:0 auto;}
-.uno-dir{font-size:1.3rem;color:var(--muted);}
-.uno-opponents{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.3rem 0;}
-.uno-opp{display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.35rem .6rem;border-radius:12px;background:var(--surface-1);border:1.5px solid var(--border);}
-.uno-opp.cur{box-shadow:0 0 0 2px rgba(var(--accent-rgb),.4);}
-.uno-opp-name{font-size:.76rem;font-weight:800;color:var(--text);}
-.uno-opp-cards{display:flex;}
-.uno-back-mini{width:9px;height:14px;border-radius:2px;margin-left:-4px;background:linear-gradient(135deg,#2b2f3a,#141824);border:1px solid rgba(255,255,255,.15);}
+.uno-screen{max-width:600px;margin:0 auto;position:relative;overflow:hidden;}
+.uno-screen>*{position:relative;z-index:1;}
+
+/* ── Tapis de jeu décoratif ── */
+.uno-felt{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  background:
+    radial-gradient(120% 80% at 50% 34%, color-mix(in srgb, var(--uno-active) 26%, transparent), transparent 60%),
+    radial-gradient(100% 70% at 50% 40%, rgba(12,20,40,.28), transparent 70%);}
+.uno-felt-glow{position:absolute;top:20%;left:50%;width:340px;height:340px;transform:translateX(-50%);border-radius:50%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--uno-active) 55%, transparent), transparent 66%);
+  filter:blur(30px);opacity:.6;animation:unoGlow 3.5s ease-in-out infinite;}
+@keyframes unoGlow{0%,100%{opacity:.4;transform:translateX(-50%) scale(1);}50%{opacity:.75;transform:translateX(-50%) scale(1.12);}}
+.uno-felt-vign{position:absolute;inset:0;box-shadow:inset 0 0 120px 30px rgba(0,0,0,.35);}
+.uno-felt-mark{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%) rotate(-16deg);
+  font-family:var(--font-d);font-style:italic;font-size:5rem;color:color-mix(in srgb, var(--uno-active) 40%, #fff);opacity:.06;letter-spacing:.02em;}
+.uno-particle{position:absolute;width:8px;height:8px;border-radius:50%;background:color-mix(in srgb, var(--uno-active) 70%, #fff);opacity:.5;
+  animation:unoFloat 7s ease-in-out infinite;}
+.uno-particle.p0{top:12%;left:14%;animation-delay:0s;background:#e0403f;} .uno-particle.p1{top:22%;left:82%;animation-delay:.7s;background:#f4c430;}
+.uno-particle.p2{top:44%;left:8%;animation-delay:1.4s;background:#2fa66a;} .uno-particle.p3{top:60%;left:88%;animation-delay:2.1s;background:#3b6fe0;}
+.uno-particle.p4{top:70%;left:20%;animation-delay:2.8s;} .uno-particle.p5{top:16%;left:50%;animation-delay:3.5s;background:#f4c430;}
+.uno-particle.p6{top:52%;left:70%;animation-delay:4.2s;background:#e0403f;} .uno-particle.p7{top:80%;left:60%;animation-delay:4.9s;background:#2fa66a;}
+.uno-particle.p8{top:36%;left:36%;animation-delay:5.6s;background:#3b6fe0;}
+@keyframes unoFloat{0%,100%{transform:translateY(0) scale(1);opacity:.15;}50%{transform:translateY(-22px) scale(1.4);opacity:.6;}}
+@media (prefers-reduced-motion: reduce){.uno-felt-glow,.uno-particle{animation:none;}}
+
+.uno-dir{font-size:1.3rem;color:color-mix(in srgb, var(--uno-active) 60%, var(--muted));}
+.uno-opponents{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.5rem 0 .2rem;}
+.uno-opp{display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.4rem .7rem;border-radius:14px;
+  background:color-mix(in srgb, var(--surface-1) 82%, transparent);border:1.5px solid var(--border);backdrop-filter:blur(6px);}
+.uno-opp.cur{border-color:color-mix(in srgb, var(--uno-active) 70%, transparent);box-shadow:0 0 0 2px color-mix(in srgb, var(--uno-active) 45%, transparent),0 6px 18px color-mix(in srgb, var(--uno-active) 30%, transparent);}
+.uno-opp-name{font-size:.78rem;font-weight:900;color:var(--text);}
+.uno-opp-cards{display:flex;height:16px;align-items:center;}
+.uno-back-mini{width:10px;height:15px;border-radius:2px;margin-left:-5px;background:linear-gradient(135deg,#3a3f4d,#141824);border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 2px rgba(0,0,0,.3);}
 .uno-opp-count{font-size:.72rem;font-weight:900;color:var(--muted);}
-.uno-opp-count.uno1{color:var(--danger);}
+.uno-opp-count.uno1{color:#f4c430;text-shadow:0 0 8px rgba(244,196,48,.6);}
 
-.uno-center{display:flex;gap:1.4rem;justify-content:center;align-items:center;margin:.6rem 0;}
-.uno-draw-pile{position:relative;width:66px;height:96px;border-radius:12px;cursor:pointer;border:none;
-  background:linear-gradient(135deg,#2b2f3a,#141824);box-shadow:0 8px 20px rgba(0,0,0,.35);display:grid;place-items:center;}
-.uno-draw-pile:disabled{opacity:.6;cursor:default;}
-.uno-back-logo{font-family:var(--font-d);font-style:italic;color:#f4c430;font-size:1.1rem;transform:rotate(-18deg);text-shadow:0 2px 4px rgba(0,0,0,.5);}
-.uno-draw-count{position:absolute;bottom:4px;right:6px;font-size:.7rem;font-weight:800;color:rgba(255,255,255,.8);}
-.uno-discard{position:relative;}
-.uno-active-color{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;border:2px solid var(--surface-1);box-shadow:var(--shadow);}
+/* ── Table centrale ── */
+.uno-table{position:relative;display:flex;justify-content:center;padding:1.1rem 0 .5rem;margin:.2rem 0;}
+.uno-table-ring{position:absolute;top:50%;left:50%;width:250px;height:150px;transform:translate(-50%,-46%);border-radius:50%;
+  border:2px solid color-mix(in srgb, var(--uno-active) 45%, transparent);
+  box-shadow:0 0 40px color-mix(in srgb, var(--uno-active) 35%, transparent),inset 0 0 40px color-mix(in srgb, var(--uno-active) 18%, transparent);
+  animation:unoRing 3.5s ease-in-out infinite;}
+@keyframes unoRing{0%,100%{transform:translate(-50%,-46%) scale(1);opacity:.7;}50%{transform:translate(-50%,-46%) scale(1.06);opacity:1;}}
+@media (prefers-reduced-motion: reduce){.uno-table-ring{animation:none;}}
+.uno-center{display:flex;gap:1.6rem;justify-content:center;align-items:center;}
+.uno-draw-pile{position:relative;width:68px;height:100px;border-radius:13px;cursor:pointer;border:none;
+  background:repeating-linear-gradient(48deg,#2b2f3a 0 8px,#20232d 8px 16px);
+  box-shadow:0 10px 24px rgba(0,0,0,.45),inset 0 0 0 3px rgba(255,255,255,.12),inset 0 2px 6px rgba(255,255,255,.08);display:grid;place-items:center;}
+.uno-draw-pile:disabled{opacity:.7;cursor:default;}
+.uno-draw-pile.glow{animation:unoDrawGlow 1.6s ease-in-out infinite;}
+@keyframes unoDrawGlow{0%,100%{box-shadow:0 10px 24px rgba(0,0,0,.45),inset 0 0 0 3px rgba(255,255,255,.12),0 0 0 0 color-mix(in srgb, var(--uno-active) 60%, transparent);}50%{box-shadow:0 10px 24px rgba(0,0,0,.45),inset 0 0 0 3px rgba(255,255,255,.2),0 0 22px 4px color-mix(in srgb, var(--uno-active) 55%, transparent);}}
+@media (prefers-reduced-motion: reduce){.uno-draw-pile.glow{animation:none;}}
+.uno-pile-shadow{position:absolute;inset:0;border-radius:13px;box-shadow:6px 6px 0 -2px rgba(20,24,36,.7),12px 12px 0 -4px rgba(20,24,36,.5);z-index:-1;}
+.uno-back-logo{font-family:var(--font-d);font-style:italic;color:#f4c430;font-size:1.15rem;transform:rotate(-18deg);text-shadow:0 2px 5px rgba(0,0,0,.6);
+  background:#e0403f;padding:.15rem .5rem;border-radius:999px/60%;box-shadow:0 2px 6px rgba(0,0,0,.4);}
+.uno-draw-count{position:absolute;bottom:5px;right:7px;font-size:.72rem;font-weight:900;color:rgba(255,255,255,.85);}
+.uno-discard{position:relative;width:66px;height:96px;}
+.uno-thrown{position:absolute;inset:0;}
+.uno-stack{position:absolute;width:66px;height:96px;border-radius:11px;background:linear-gradient(135deg,#e8e8ec,#cfcfd6);box-shadow:0 4px 10px rgba(0,0,0,.3);}
+.uno-stack.s1{transform:rotate(-8deg) translate(-3px,2px);} .uno-stack.s2{transform:rotate(6deg) translate(3px,1px);}
+.uno-active-color{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;border:2px solid var(--surface-1);z-index:3;
+  box-shadow:0 0 12px color-mix(in srgb, var(--uno-active) 80%, transparent),var(--shadow);}
 
-.uno-card{position:relative;width:56px;height:82px;border-radius:10px;border:none;cursor:pointer;padding:0;
-  box-shadow:0 4px 10px rgba(0,0,0,.3),inset 0 0 0 3px rgba(255,255,255,.85);overflow:hidden;}
+.uno-card{position:relative;width:56px;height:82px;border-radius:11px;border:none;cursor:pointer;padding:0;
+  box-shadow:0 5px 12px rgba(0,0,0,.35),inset 0 0 0 3px rgba(255,255,255,.9);overflow:hidden;}
+.uno-card::after{content:'';position:absolute;top:0;left:0;right:0;height:45%;border-radius:11px 11px 40% 40%;
+  background:linear-gradient(180deg,rgba(255,255,255,.35),transparent);pointer-events:none;}
 .uno-card:disabled{cursor:default;}
 .uno-card.big{width:66px;height:96px;}
-.uno-card.dim{opacity:.42;filter:grayscale(.4);}
-.uno-oval{position:absolute;inset:14% 10%;background:#fff;border-radius:50%/40%;transform:rotate(-32deg);display:grid;place-items:center;}
+.uno-card.dim{opacity:.4;filter:grayscale(.5);}
+.uno-oval{position:absolute;inset:14% 10%;background:#fff;border-radius:50%/40%;transform:rotate(-32deg);display:grid;place-items:center;box-shadow:inset 0 2px 4px rgba(0,0,0,.12);}
 .uno-val{transform:rotate(32deg);font-family:var(--font-d);font-weight:900;font-size:1.5rem;}
 .uno-card.big .uno-val{font-size:1.8rem;}
-.uno-corner{position:absolute;font-family:var(--font-d);font-weight:900;color:#fff;font-size:.7rem;text-shadow:0 1px 2px rgba(0,0,0,.4);}
+.uno-corner{position:absolute;font-family:var(--font-d);font-weight:900;color:#fff;font-size:.72rem;text-shadow:0 1px 2px rgba(0,0,0,.5);}
 .uno-corner.tl{top:3px;left:5px;} .uno-corner.br{bottom:3px;right:5px;transform:rotate(180deg);}
 
 .uno-actions{display:flex;gap:.5rem;justify-content:center;min-height:40px;align-items:center;}
@@ -221,8 +298,8 @@ const UNO_CSS = `
 .uno-btn-uno{color:#fff;background:linear-gradient(135deg,#e0403f,#f4c430);box-shadow:0 6px 18px rgba(224,64,63,.5);font-family:var(--font-d);letter-spacing:.05em;animation:unoPulse 1s ease-in-out infinite;}
 @keyframes unoPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
-.uno-hand{display:flex;justify-content:center;gap:2px;flex-wrap:wrap;padding:.3rem;min-height:90px;}
-.uno-hand-card{margin:0 -6px;}
+.uno-hand{display:flex;justify-content:center;gap:2px;flex-wrap:wrap;padding:.4rem;min-height:100px;}
+.uno-hand-card{margin:0 -6px;filter:drop-shadow(0 6px 8px rgba(0,0,0,.28));}
 
 .uno-log{text-align:center;margin-top:.3rem;}
 .uno-log-row{font-size:.76rem;color:var(--muted);}
