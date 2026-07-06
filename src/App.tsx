@@ -29,6 +29,7 @@ const ScrabbleBoard = lazy(() => import("./components/games/ScrabbleBoard").then
 const Monopoly = lazy(() => import("./components/games/Monopoly").then(m => ({ default: m.Monopoly })));
 const Uno = lazy(() => import("./components/games/Uno").then(m => ({ default: m.Uno })));
 const Marque = lazy(() => import("./components/games/Marque").then(m => ({ default: m.Marque })));
+const Memory = lazy(() => import("./components/games/Memory").then(m => ({ default: m.Memory })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -443,6 +444,9 @@ function App() {
           )}
           {activeGame === "marque" && (
             <Marque room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
+          )}
+          {activeGame === "memory" && (
+            <Memory room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
           {activeGame === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />

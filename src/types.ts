@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result" | "palmares";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory";
 
 export interface MemberPreset {
   name: string;
@@ -145,6 +145,13 @@ export interface Room {
   mixAnswers?: Record<string, string>;
   mixTimes?: Record<string, number>;
   mixRevealed?: boolean;
+  // Memory des Paires
+  mmCards?: string[] | null;        // emoji par case
+  mmMatched?: number[];             // cases appariées
+  mmUp?: number[];                  // cases retournées ce tour (0-2)
+  mmTurn?: number;                  // index dans mmOrder
+  mmOrder?: string[];
+  mmPairs?: Record<string, number>; // paires trouvées par joueur
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round
