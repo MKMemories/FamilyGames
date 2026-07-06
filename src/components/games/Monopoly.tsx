@@ -5,7 +5,7 @@ import { fx } from "../../lib/sound";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { BOARD, TOKENS, START_MONEY, MAX_HOUSES, type Space } from "../../lib/monopolyData";
 import {
-  initMono, rollDice, buyProperty, declineBuy, buildHouse, endTurn, currentId, ownsFullSet,
+  initMono, rollDice, buyProperty, declineBuy, buildHouse, endTurn, currentId, ownsFullSet, aiTurn,
   type MonoState,
 } from "../../lib/monopolyEngine";
 import type { Room } from "../../types";
@@ -76,8 +76,7 @@ export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   const aiActive = !!aiId && !!mono && mono.phase !== "over" && cur === aiId && isHost;
   useSoloAI(aiActive, `${mono?.turn}-${mono?.phase}`, () => {
     if (!mono || !aiId) return;
-    // On importe aiTurn dynamiquement via l'objet moteur pour garder le composant léger.
-    import("../../lib/monopolyEngine").then(({ aiTurn }) => write(aiTurn(mono, Math.random)));
+    write(aiTurn(mono, Math.random));
   }, 900);
 
   /* ── Écran de démarrage ── */
