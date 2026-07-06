@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { GAMES, GAME_SECTIONS } from "../lib/gameData";
+import { gameIcon } from "../lib/gameIcons";
 import { topPlayedGames, formatPlaytime } from "../lib/gameStats";
 import type { Game, GameId } from "../types";
 
@@ -33,8 +34,10 @@ function GameCard({ g, badge, onSelect }: { g: Game; badge?: string; onSelect: (
       onClick={() => onSelect(g.id)}
     >
       {badge ? <span className="game-playtime">⏱ {badge}</span> : g.star && <span className="game-ribbon">★ Soirée</span>}
-      <span className="game-medallion">
-        <span className="game-emoji">{g.emoji}</span>
+      <span className={`game-medallion ${gameIcon(g.id) ? "has-img" : ""}`}>
+        {gameIcon(g.id)
+          ? <img className="game-medal-img" src={gameIcon(g.id)} alt="" loading="lazy" />
+          : <span className="game-emoji">{g.emoji}</span>}
         <span className="game-sheen" aria-hidden />
       </span>
       <span className="game-name">{g.name}</span>

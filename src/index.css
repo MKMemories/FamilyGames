@@ -1659,6 +1659,9 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
   overflow: hidden;
 }
 .game-emoji { font-size: 1.9rem; line-height: 1; margin: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.28)); }
+/* Icône illustrée : remplit le médaillon (recadrage circulaire, forme homogène avec les emojis) */
+.game-medallion.has-img { background: none; }
+.game-medal-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
 .game-sheen {
   position: absolute; top: -60%; left: -30%; width: 55%; height: 200%;
   background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
