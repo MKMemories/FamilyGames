@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result" | "palmares";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere" | "yams";
 
 export interface MemberPreset {
   name: string;
@@ -162,6 +162,13 @@ export interface Room {
   wmTimes?: Record<string, number>;     // horodatage de résolution (ordre/vitesse)
   wmRevealed?: boolean;                 // manche dévoilée
   wmUsed?: number[];                    // mots déjà tirés (non-répétition)
+  // Yam's (5 dés, feuille de score)
+  ymOrder?: string[];                   // ordre de jeu
+  ymTurn?: number;                      // index dans ymOrder
+  ymDice?: number[] | null;             // 5 dés (null tant qu'aucun lancer)
+  ymHeld?: boolean[];                   // dés conservés entre les lancers
+  ymRolls?: number;                     // lancers utilisés ce tour (0-3)
+  ymScores?: Record<string, Record<string, number>>; // ymScores/<pid>/<catId>
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round
