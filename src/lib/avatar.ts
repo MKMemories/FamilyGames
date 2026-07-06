@@ -55,10 +55,10 @@ export const DEFAULT_AVATAR: Avatar = { skin: 1, bg: 1, hair: 1, hairColor: 1, e
 
 /* Avatars par défaut des membres de la famille (personnalisables ensuite). */
 export const PRESET_AVATARS: Record<string, Avatar> = {
-  Mohamed:  { skin: 2, bg: 2, hair: 1, hairColor: 1, eyes: 0, mouth: 0, outfit: 2, facial: 1, accessory: 0 },
-  Saoussen: { skin: 1, bg: 12, hair: 7, hairColor: 1, eyes: 1, mouth: 0, outfit: 5, facial: 0, accessory: 0 },
-  Sara:     { skin: 1, bg: 0, hair: 6, hairColor: 2, eyes: 1, mouth: 0, outfit: 0, facial: 0, accessory: 0 },
-  Lilya:    { skin: 1, bg: 3, hair: 1, hairColor: 2, eyes: 1, mouth: 0, outfit: 0, facial: 0, accessory: 0 },
+  Mohamed:  { skin: 2, bg: 2, hair: 1, hairColor: 1, eyes: 0, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
+  Saoussen: { skin: 1, bg: 12, hair: 7, hairColor: 1, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
+  Sara:     { skin: 1, bg: 0, hair: 6, hairColor: 2, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
+  Lilya:    { skin: 1, bg: 3, hair: 7, hairColor: 2, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
 };
 
 /* ── Packs « à la mode » : un look complet en un tap ── */
