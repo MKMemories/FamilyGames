@@ -3,6 +3,7 @@
 import type { GameId } from "../types";
 
 import uno from "../assets/icons/uno.webp";
+import monopoly from "../assets/icons/monopoly.webp";
 import quiz from "../assets/icons/quiz.webp";
 import marque from "../assets/icons/marque.webp";
 import petitbac from "../assets/icons/petitbac.webp";
@@ -21,6 +22,7 @@ import awale from "../assets/icons/awale.webp";
 
 export const GAME_ICONS: Partial<Record<GameId, string>> = {
   uno,
+  monopoly,
   quiz,
   marque,
   petitbac,
