@@ -27,28 +27,44 @@ function clueStage(elapsed: number): number {
 /* Illustration ORIGINALE par marque : une icône produit/secteur (aucun logo
    réel), dévoilée d'abord floue puis nette au fil des indices. */
 const ICON_BY_NAME: Record<string, string> = {
-  Google: "search", Amazon: "cart", GoPro: "camera", Nvidia: "controller", Tesla: "car", Microsoft: "play", Sony: "controller",
+  // Tech / réseaux
+  Google: "search", Amazon: "cart", GoPro: "camera", Nvidia: "chip", Tesla: "car", Microsoft: "laptop", Sony: "controller",
   YouTube: "play", Netflix: "play", Spotify: "music", WhatsApp: "chat", Instagram: "camera", Snapchat: "camera",
   Twitch: "play", Pinterest: "cart", Reddit: "chat", Discord: "chat", TikTok: "music",
-  Starbucks: "coffee", KFC: "burger", "Domino's": "pizza", Subway: "burger", "McDonald's": "burger", "Burger King": "burger",
-  Nutella: "chocolate", Oreo: "cookie", Kinder: "chocolate", Haribo: "candy",
+  LG: "phone", Lenovo: "laptop", Canon: "camera", JBL: "headphones", Bose: "headphones",
+  Facebook: "chat", Telegram: "chat", LinkedIn: "chat", ChatGPT: "robot", Zoom: "play", Deezer: "music", SoundCloud: "music",
+  // Gaming
+  EA: "controller", Ubisoft: "controller", "Epic Games": "controller", "Call of Duty": "controller", Pokémon: "ball", Sega: "controller", Razer: "controller",
+  // Fast-food
+  Starbucks: "coffee", KFC: "drumstick", "Domino's": "pizza", Subway: "burger", "McDonald's": "burger", "Burger King": "burger",
+  "Pizza Hut": "pizza", "Five Guys": "burger", "Krispy Kreme": "donut", "Dunkin'": "donut", "Ben & Jerry's": "icecream", Chipotle: "burger",
+  // Boissons : canette VS bouteille
+  "Red Bull": "can", Monster: "can", "Capri-Sun": "can",
+  "Coca-Cola": "bottle", Pepsi: "bottle", Fanta: "bottle", Sprite: "bottle", Orangina: "bottle", Oasis: "bottle", Evian: "bottle", Nescafé: "coffee",
+  // Snacks
+  Nutella: "jar", Oreo: "cookie", Kinder: "chocolate", Haribo: "candy", "M&M's": "candy", "Chupa Chups": "candy",
+  Doritos: "chips", "Lay's": "chips", Pringles: "chips", KitKat: "chocolate", Snickers: "chocolate", Twix: "chocolate", Milka: "chocolate",
+  // Mode / luxe / divers
   Lego: "brick", Roblox: "brick", Minecraft: "brick", IKEA: "cart", Airbnb: "house", Uber: "car", PayPal: "card",
-  Disney: "star", Marvel: "star", Supreme: "shirt", "The North Face": "shirt", Lacoste: "shirt",
-  "Red Bull": "can", Monster: "can", Fanta: "can", "Coca-Cola": "can", Pepsi: "can",
+  Disney: "star", Marvel: "star", Supreme: "cap", "The North Face": "mountain", Lacoste: "shirt",
+  Levis: "shirt", "Levi's": "shirt", "Calvin Klein": "shirt", "Tommy Hilfiger": "shirt", Shein: "shirt", Sephora: "bag", Prada: "bag", Balenciaga: "bag",
+  Reebok: "sneaker", Asics: "sneaker", Jordan: "ball", Decathlon: "ball", "Under Armour": "shirt",
+  Audi: "car", Volkswagen: "car", Porsche: "car", Renault: "car",
+  eBay: "cart", Temu: "cart", Ryanair: "plane", Booking: "house",
 };
 const ICON_BY_CAT: Record<string, string> = {
   Tech: "phone", "Réseaux": "chat", Gaming: "controller", Sport: "sneaker", Mode: "shirt",
   Luxe: "bag", "Fast-food": "burger", Boissons: "can", Snacks: "chocolate", Auto: "car", Divertissement: "play", Divers: "cart",
 };
-function iconFor(b: Brand): string { return ICON_BY_NAME[b.name] || ICON_BY_CAT[b.category] || "star"; }
+export function iconFor(b: Brand): string { return ICON_BY_NAME[b.name] || ICON_BY_CAT[b.category] || "star"; }
 
-function BrandIcon({ icon }: { icon: string }) {
+export function BrandIcon({ icon }: { icon: string }) {
   const W = "#ffffff";
   const P: Record<string, React.ReactNode> = {
     phone: <g><rect x="36" y="20" width="28" height="60" rx="6" fill={W} /><rect x="40" y="27" width="20" height="42" rx="2" fill="#000" opacity=".22" /><circle cx="50" cy="74" r="2.4" fill="#000" opacity=".3" /></g>,
     chat: <g><path d="M24 30 h52 a6 6 0 0 1 6 6 v26 a6 6 0 0 1 -6 6 H44 l-12 10 v-10 h-8 a6 6 0 0 1 -6 -6 V36 a6 6 0 0 1 6 -6 z" fill={W} /><g fill="#000" opacity=".2"><circle cx="38" cy="49" r="3.5" /><circle cx="51" cy="49" r="3.5" /><circle cx="64" cy="49" r="3.5" /></g></g>,
     controller: <g><rect x="20" y="38" width="60" height="30" rx="15" fill={W} /><rect x="30" y="49" width="12" height="4" rx="2" fill="#000" opacity=".28" /><rect x="34" y="45" width="4" height="12" rx="2" fill="#000" opacity=".28" /><circle cx="62" cy="48" r="3.4" fill="#000" opacity=".28" /><circle cx="70" cy="55" r="3.4" fill="#000" opacity=".28" /></g>,
-    sneaker: <g><path d="M18 58 q0 -6 6 -6 q10 0 14 -6 l6 -8 q3 -4 6 -1 l2 6 q10 3 26 9 q6 2 6 7 v6 H18 z" fill={W} /><path d="M46 33 l3 8" stroke="#000" strokeOpacity=".25" strokeWidth="2" /><path d="M20 66 h60" stroke="#000" strokeOpacity=".18" strokeWidth="4" /></g>,
+    sneaker: <g><path d="M15 60 q0 -5 6 -6 q9 -1 13 -6 l7 -9 q3 -4 7 -2 q2 1 2 4 l1 5 q3 3 9 5 q13 4 19 8 q5 3 5 8 v4 H17 z" fill={W} /><g stroke="#000" strokeOpacity=".22" strokeWidth="2" strokeLinecap="round"><path d="M43 42 l3 7" /><path d="M49 44 l2 7" /><path d="M55 47 l1 6" /></g><path d="M50 41 q10 4 20 9" stroke="#000" strokeOpacity=".18" strokeWidth="2.5" fill="none" /><rect x="16" y="66" width="68" height="7" rx="3.5" fill="#000" opacity=".2" /></g>,
     shirt: <g><path d="M38 26 l-16 8 l6 12 l8 -4 v32 h28 V42 l8 4 l6 -12 l-16 -8 q-6 6 -14 0 z" fill={W} /></g>,
     bag: <g><path d="M30 40 h40 l4 38 H26 z" fill={W} /><path d="M38 40 a12 12 0 0 1 24 0" fill="none" stroke={W} strokeWidth="4" /></g>,
     burger: <g><path d="M26 34 q24 -12 48 0 q-24 6 -48 0 z" fill={W} /><rect x="24" y="44" width="52" height="6" rx="3" fill={W} /><rect x="26" y="52" width="48" height="5" rx="2.5" fill="#000" opacity=".22" /><path d="M26 60 q24 12 48 0 v2 q-24 10 -48 0 z" fill={W} /></g>,
@@ -68,6 +84,22 @@ function BrandIcon({ icon }: { icon: string }) {
     house: <g><path d="M50 24 L78 48 H22 Z" fill={W} /><rect x="30" y="46" width="40" height="30" fill={W} /><rect x="44" y="58" width="12" height="18" fill="#000" opacity=".22" /></g>,
     card: <g><rect x="22" y="34" width="56" height="34" rx="5" fill={W} /><rect x="22" y="42" width="56" height="7" fill="#000" opacity=".28" /><rect x="28" y="58" width="16" height="4" rx="2" fill="#000" opacity=".22" /></g>,
     star: <g><path d="M50 22 l8 18 20 2 -15 14 4 20 -17 -10 -17 10 4 -20 -15 -14 20 -2 z" fill={W} /></g>,
+    laptop: <g><rect x="30" y="28" width="40" height="27" rx="3" fill={W} /><rect x="34" y="32" width="32" height="19" rx="1.5" fill="#000" opacity=".22" /><path d="M22 60 h56 l-5 7 h-46 z" fill={W} /></g>,
+    headphones: <g><path d="M28 55 v-6 a22 22 0 0 1 44 0 v6" fill="none" stroke={W} strokeWidth="6" strokeLinecap="round" /><rect x="22" y="52" width="11" height="20" rx="5" fill={W} /><rect x="67" y="52" width="11" height="20" rx="5" fill={W} /></g>,
+    robot: <g><rect x="46" y="20" width="8" height="8" rx="2" fill={W} /><circle cx="50" cy="20" r="3" fill={W} /><rect x="30" y="32" width="40" height="34" rx="9" fill={W} /><circle cx="42" cy="49" r="4.5" fill="#000" opacity=".3" /><circle cx="58" cy="49" r="4.5" fill="#000" opacity=".3" /><rect x="43" y="58" width="14" height="3" rx="1.5" fill="#000" opacity=".25" /></g>,
+    drumstick: <g><ellipse cx="42" cy="42" rx="18" ry="15" fill={W} transform="rotate(-22 42 42)" /><rect x="53" y="50" width="8" height="22" rx="4" fill={W} transform="rotate(-22 57 61)" /><circle cx="64" cy="70" r="6" fill={W} /><circle cx="58" cy="74" r="5" fill={W} /></g>,
+    bottle: <g><path d="M45 20 h10 v6 q0 3 3 6 q5 5 5 13 v27 a6 6 0 0 1 -6 6 H43 a6 6 0 0 1 -6 -6 V45 q0 -8 5 -13 q3 -3 3 -6 z" fill={W} /><rect x="43" y="18" width="14" height="5" rx="2" fill={W} /><rect x="39" y="56" width="22" height="16" rx="2" fill="#000" opacity=".18" /></g>,
+    fries: <g><g fill={W}><rect x="37" y="28" width="4.5" height="22" rx="2" /><rect x="44" y="24" width="4.5" height="26" rx="2" /><rect x="51" y="26" width="4.5" height="24" rx="2" /><rect x="58" y="30" width="4.5" height="20" rx="2" /></g><path d="M33 46 h34 l-4 30 h-26 z" fill={W} /><g stroke="#000" strokeOpacity=".2" strokeWidth="3"><path d="M40 52 v22 M50 52 v22 M60 52 v22" /></g></g>,
+    donut: <g><circle cx="50" cy="50" r="25" fill={W} /><circle cx="50" cy="50" r="9" fill="#000" opacity=".24" /><g fill="#000" opacity=".26"><rect x="46" y="28" width="6" height="2.5" rx="1.2" transform="rotate(30 49 29)" /><rect x="63" y="42" width="6" height="2.5" rx="1.2" transform="rotate(-20 66 43)" /><rect x="34" y="46" width="6" height="2.5" rx="1.2" transform="rotate(50 37 47)" /><rect x="58" y="64" width="6" height="2.5" rx="1.2" transform="rotate(70 61 65)" /></g></g>,
+    icecream: <g><path d="M39 50 h22 l-11 28 z" fill={W} /><circle cx="43" cy="44" r="10" fill={W} /><circle cx="57" cy="44" r="10" fill={W} /><circle cx="50" cy="36" r="10.5" fill={W} /><path d="M40 52 l4 4 M50 52 l4 4 M56 52 l4 4" stroke="#000" strokeOpacity=".14" strokeWidth="2" /></g>,
+    chips: <g><path d="M34 24 h32 l-3 8 v42 q-13 6 -26 0 v-42 z" fill={W} /><path d="M34 24 l32 0 -4 6 h-24 z" fill="#000" opacity=".18" /><path d="M44 44 l6 6 6 -6 -6 -6 z" fill="#000" opacity=".2" /></g>,
+    ball: <g><circle cx="50" cy="50" r="25" fill={W} /><path d="M50 40 l9 6.5 -3.5 11 h-11 l-3.5 -11 z" fill="#000" opacity=".26" /><g stroke="#000" strokeOpacity=".2" strokeWidth="2"><path d="M50 25 v9 M71 42 l-8 5 M64 71 l-6 -8 M36 71 l6 -8 M29 42 l8 5" /></g></g>,
+    plane: <g><path d="M50 18 q4 0 5 12 l22 13 v7 l-22 -6 -1 14 7 6 v5 l-11 -4 -11 4 v-5 l7 -6 -1 -14 -22 6 v-7 l22 -13 q1 -12 5 -12 z" fill={W} /></g>,
+    chip: <g><rect x="34" y="34" width="32" height="32" rx="4" fill={W} /><rect x="41" y="41" width="18" height="18" rx="2" fill="#000" opacity=".22" /><g stroke={W} strokeWidth="3"><path d="M40 34 v-8 M50 34 v-8 M60 34 v-8 M40 66 v8 M50 66 v8 M60 66 v8 M34 40 h-8 M34 50 h-8 M34 60 h-8 M66 40 h8 M66 50 h8 M66 60 h8" /></g></g>,
+    jar: <g><rect x="36" y="36" width="28" height="40" rx="6" fill={W} /><rect x="38" y="24" width="24" height="10" rx="3" fill={W} /><rect x="40" y="48" width="20" height="18" rx="2" fill="#000" opacity=".18" /></g>,
+    cap: <g><path d="M22 58 q6 -26 28 -26 q22 0 28 26 q-28 -10 -56 0 z" fill={W} /><path d="M20 58 q10 -5 22 -6 l-2 8 q-12 1 -20 4 z" fill={W} opacity=".85" /><circle cx="50" cy="34" r="3" fill="#000" opacity=".2" /></g>,
+    mountain: <g><path d="M20 74 L42 34 L54 56 L62 44 L80 74 Z" fill={W} /><path d="M42 34 l6 11 -6 4 -6 -4 z" fill="#000" opacity=".18" /></g>,
+    watch: <g><rect x="41" y="22" width="18" height="14" rx="4" fill={W} /><rect x="41" y="64" width="18" height="14" rx="4" fill={W} /><circle cx="50" cy="50" r="16" fill={W} /><circle cx="50" cy="50" r="12.5" fill="#000" opacity=".2" /><path d="M50 50 v-6 M50 50 l5 3" stroke={W} strokeWidth="2" strokeLinecap="round" /></g>,
   };
   return <svg viewBox="0 0 100 100" width="58%" height="58%" style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,.35))" }}>{P[icon] || P.star}</svg>;
 }
