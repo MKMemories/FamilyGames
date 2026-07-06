@@ -62,6 +62,19 @@ export interface Brand {
   hint: string;          // indice textuel (dévoilé progressivement)
 }
 
+/* ── Quiz KHELIJ « Le Grand Mix » (formats mélangés par manche) ── */
+export interface MixRound {
+  type: "qcm" | "vf" | "prix" | "marque";
+  cat: string;           // libellé du format (avec emoji)
+  q?: string;            // énoncé (qcm / vf)
+  sub?: string;          // sous-catégorie (qcm)
+  options?: string[];    // qcm / vf / marque
+  answer?: string;       // bonne réponse (qcm / vf / marque)
+  explain?: string;      // anecdote (vf)
+  brand?: Brand;         // marque (illustration + indices)
+  product?: JpProduct;   // produit (juste prix)
+}
+
 /* ── Dessinez, c'est gagné ───────────────── */
 export interface DrawPoint { x: number; y: number; }
 
@@ -126,6 +139,12 @@ export interface Room {
   questionIdx?: number;
   revealed?: boolean;
   totalQuestions?: number;
+  // Quiz « Le Grand Mix » : playlist de manches de formats variés
+  mixRounds?: MixRound[] | null;
+  mixIdx?: number;
+  mixAnswers?: Record<string, string>;
+  mixTimes?: Record<string, number>;
+  mixRevealed?: boolean;
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round

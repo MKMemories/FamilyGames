@@ -12,7 +12,7 @@ const Connect4 = lazy(() => import("./components/games/Connect4").then(m => ({ d
 const Checkers = lazy(() => import("./components/games/Checkers").then(m => ({ default: m.Checkers })));
 const Chess = lazy(() => import("./components/games/Chess").then(m => ({ default: m.Chess })));
 const Scrabble = lazy(() => import("./components/games/Scrabble").then(m => ({ default: m.Scrabble })));
-const Quiz = lazy(() => import("./components/games/Quiz").then(m => ({ default: m.Quiz })));
+const QuizMix = lazy(() => import("./components/games/QuizMix").then(m => ({ default: m.QuizMix })));
 const Defi = lazy(() => import("./components/games/Defi").then(m => ({ default: m.Defi })));
 const JustePrix = lazy(() => import("./components/games/JustePrix").then(m => ({ default: m.JustePrix })));
 const Dessin = lazy(() => import("./components/games/Dessin").then(m => ({ default: m.Dessin })));
@@ -412,7 +412,7 @@ function App() {
             />
           )}
           {activeGame === "quiz" && (
-            <Quiz
+            <QuizMix
               room={room} roomId={roomId} playerId={playerId}
               isHost={isHost} isSolo={isSolo}
               onLeave={leaveRoom}

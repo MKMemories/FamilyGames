@@ -26,7 +26,7 @@ export const GAMES: Game[] = [
   { id: "monopoly", name: "Monopoly KHELIJ", emoji: "🏦", desc: "Achète, construis, ruine la famille — le grand plateau immobilier", min: 2, max: 4, color: "#16a34a", grad: "#4ade80", cat: "famille", star: true },
   { id: "grandscrabble", name: "Grand Scrabble", emoji: "🔠", desc: "Le vrai Scrabble : plateau 15×15, cases bonus et mots croisés", min: 2, max: 4, color: "#0f766e", grad: "#2dd4bf", cat: "famille", star: true },
   { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#22c55e", grad: "#4ade80", cat: "famille", star: true },
-  { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Questions sur la famille, la culture et le monde", min: 2, max: 4, color: "#ec4899", grad: "#f472b6", cat: "famille" },
+  { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Le grand mix : culture, vrai/faux, juste prix, devine la marque !", min: 1, max: 6, color: "#ec4899", grad: "#f472b6", cat: "famille" },
   { id: "marque", name: "Devine la Marque", emoji: "🏷️", desc: "Des indices se dévoilent peu à peu — reconnais la grande marque !", min: 1, max: 6, color: "#e11d48", grad: "#fb7185", cat: "famille" },
   { id: "petitbac", name: "Petit Bac", emoji: "🅰️", desc: "Une lettre, des catégories — remplis plus vite que les autres", min: 2, max: 4, color: "#0ea5e9", grad: "#38bdf8", cat: "famille" },
   { id: "bombe", name: "Mot Bombe", emoji: "💣", desc: "Trouve un mot avec la syllabe avant que la bombe explose !", min: 2, max: 4, color: "#f97316", grad: "#fbbf24", cat: "famille" },
@@ -417,7 +417,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "connect4") return { board: Array(6).fill(null).map(() => Array(7).fill(0)), currentTurn: 0, selected: null, hints: [] };
   if (game === "checkers") return { board: initCheckersBoard(), currentTurn: 0, selected: null, hints: [], chkChain: null };
   if (game === "chess") return { board: CHESS_INIT.map(r => [...r]), currentTurn: 0, selected: null, hints: [], chessCastle: "KQkq", chessEp: null, chessCheck: null };
-  if (game === "quiz") return { questionIdx: 0, quizThemes: ["all"], quizAnswers: {}, quizQuestions: null, quizOptions: [], revealed: false, totalQuestions: 10 };
+  if (game === "quiz") return { mixRounds: null, mixIdx: 0, mixAnswers: {}, mixTimes: {}, mixRevealed: false };
   if (game === "defi") {
     const deck = DEFIS.map((_, i) => i).sort(() => Math.random() - 0.5); // shuffle → no repeats in a game
     return { defiIdx: 0, defiDeck: deck, timerLeft: DEFIS[deck[0]].timer, timerRunning: false };
