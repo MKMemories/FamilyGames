@@ -36,6 +36,8 @@ import { RulesSheet } from "./components/RulesSheet";
 import { useTheme } from "./hooks/useTheme";
 import { rankPoints, accumulate, pickNextPartyGame, canParty } from "./lib/party";
 import { recordPlay } from "./lib/gameStats";
+import { recordResult } from "./lib/familyStats";
+import { Palmares } from "./components/Palmares";
 import type { AppState, GameId, Room, Difficulty } from "./types";
 
 /* ── Reprise de session : on garde de quoi rejoindre le salon après un
@@ -352,6 +354,22 @@ function App() {
     return () => document.removeEventListener("visibilitychange", flush);
   }, []);
 
+  /* ── Palmarès : enregistre le résultat une fois quand la partie se termine. ── */
+  const recordedRef = useRef<string>("");
+  useEffect(() => {
+    if (screen !== "result" || !room || room.status !== "finished" || !activeGame) return;
+    const sig = `${roomId}:${room.winner ?? ""}:${room.partyFinished ? "p" : "g"}`;
+    if (recordedRef.current === sig) return;
+    recordedRef.current = sig;
+    const usePartyScores = !!room.partyFinished && !!room.partyScores;
+    const sc = (usePartyScores ? room.partyScores : room.scores) || {};
+    const entries = Object.values(room.players || {})
+      .filter(p => p.id !== "zzz-ai")
+      .map(p => ({ name: p.name, score: sc[p.id] || 0, win: p.name === room.winner }));
+    recordResult(activeGame, entries);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, room?.status, room?.winner, room?.partyFinished]);
+
   return (
     <>
       <SoundToggle />
@@ -364,6 +382,7 @@ function App() {
           onSelectPlayer={handleSelectPlayer}
           onSetAvatar={handleSetAvatar}
           onContinue={() => go("pick")}
+          onPalmares={() => go("palmares")}
           onToast={showToast}
         />
       )}
@@ -472,11 +491,14 @@ function App() {
           canParty={!isSolo && !!activeGame && canParty(activeGame, Object.keys(room.players || {}).length)}
           onRestart={restartGame}
           onHome={leaveRoom}
+          onPalmares={() => go("palmares")}
           onPartyStart={() => partyAdvance(true)}
           onPartyNext={() => partyAdvance(false)}
           onPartyEnd={partyEnd}
         />
       )}
+
+      {screen === "palmares" && <Palmares onBack={() => go(room ? "result" : "home")} />}
 
       {toast && <Toast message={toast} onDone={() => setToast("")} />}
     </>

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { fx } from "../lib/sound";
 import { rankPoints, accumulate } from "../lib/party";
 import { Avatar } from "./Avatar";
+import { Confetti } from "./Confetti";
 import { decodeAvatar } from "../lib/avatar";
 import type { Room, Player } from "../types";
 
@@ -12,6 +13,7 @@ interface ResultScreenProps {
   canParty?: boolean;
   onRestart: () => void;
   onHome: () => void;
+  onPalmares?: () => void;
   onPartyStart?: () => void;
   onPartyNext?: () => void;
   onPartyEnd?: () => void;
@@ -35,7 +37,7 @@ const BAR_H = [150, 106, 74];
 const BAR_CLR = ["linear-gradient(180deg,#ffe27a,#f0ab34)", "linear-gradient(180deg,#e6ecff,#aeb7d6)", "linear-gradient(180deg,#f0b98a,#c97f45)"];
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 
-export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPartyStart, onPartyNext, onPartyEnd }: ResultScreenProps) {
+export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPalmares, onPartyStart, onPartyNext, onPartyEnd }: ResultScreenProps) {
   useEffect(() => { fx("victory"); }, []);
   const allPlayers = Object.values(room.players || {});
   const partyInProgress = !!room.partyMode && !room.partyFinished;
@@ -63,6 +65,7 @@ export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPart
 
   return (
     <div className="screen podium-screen">
+      {!isDraw && <Confetti burstKey={winner?.id || "w"} />}
       <div className="podium-glow" />
 
       {CONFETTI.map(c => (
@@ -232,6 +235,7 @@ export function ResultScreen({ room, isHost, canParty, onRestart, onHome, onPart
         {!isHost && partyInProgress && (
           <div className="waiting-host">⏳ L'hôte enchaîne la soirée…</div>
         )}
+        {onPalmares && <button className="btn btn-ghost" onClick={onPalmares}>🏆 Palmarès famille</button>}
         <button className="btn btn-ghost podium-home-btn" onClick={onHome}>🏠 Accueil</button>
       </motion.div>
 

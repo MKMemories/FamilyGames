@@ -1789,3 +1789,71 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
 .qdn-screen > *:not(.fx-aurora),
 .pb-screen > *:not(.fx-aurora),
 .ds-screen > *:not(.fx-aurora) { position: relative; z-index: 1; }
+
+/* ══════════════════════════════════════════════════════════════
+   PALMARÈS FAMILLE + CONFETTIS (wow) 
+   ══════════════════════════════════════════════════════════════ */
+.confetti-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 40; pointer-events: none; }
+
+.home-palmares {
+  width: 100%; margin-top: .6rem; padding: .8rem; border-radius: 999px;
+  font-weight: 900; font-size: .95rem; color: var(--text);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 20%, var(--surface-1)), var(--surface-1));
+  border: 1.5px solid color-mix(in srgb, var(--gold) 45%, var(--border)); box-shadow: var(--shadow);
+}
+
+.palmares { position: relative; padding-bottom: 2rem; }
+.pal-aurora { position: fixed; inset: -25%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38% 32% at 22% 12%, color-mix(in srgb, var(--gold) 40%, transparent), transparent 70%),
+    radial-gradient(40% 34% at 82% 8%, color-mix(in srgb, var(--primary) 38%, transparent), transparent 70%),
+    radial-gradient(46% 40% at 50% 106%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 72%);
+  filter: blur(24px); opacity: .5; animation: auroraDrift 18s ease-in-out infinite alternate; }
+.pal-header { position: sticky; top: 0; z-index: 12; background: linear-gradient(180deg, var(--bg) 58%, transparent);
+  backdrop-filter: blur(10px); margin: 0 -1rem .3rem; padding: .5rem 1rem .55rem; }
+
+.pal-empty { text-align: center; margin: 3rem auto; max-width: 320px; }
+.pal-empty-badge { font-size: 3.4rem; }
+.pal-empty h3 { font-family: var(--font-d); margin: .4rem 0; color: var(--text); }
+.pal-empty p { color: var(--muted); font-weight: 700; font-size: .9rem; line-height: 1.5; }
+
+/* Podium */
+.pal-podium { display: flex; justify-content: center; align-items: flex-end; gap: .5rem; margin: 1rem auto .4rem; max-width: 400px; min-height: 200px; }
+.pal-slot { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 120px; }
+.pal-podium-player { display: flex; flex-direction: column; align-items: center; gap: .15rem; margin-bottom: .3rem; }
+.pal-medal { font-size: 1.5rem; margin-bottom: -.3rem; z-index: 2; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+.pal-pname { font-weight: 900; font-size: .82rem; color: var(--text); }
+.pal-pwins { font-family: var(--font-d); font-size: .8rem; color: var(--gold); }
+.pal-bar { width: 100%; max-width: 92px; border-radius: 12px 12px 0 0; box-shadow: inset 0 2px 0 rgba(255,255,255,.3), 0 -4px 14px rgba(0,0,0,.12); }
+.pal-bar.b0 { background: linear-gradient(180deg, #ffe27a, #f0ab34); }
+.pal-bar.b1 { background: linear-gradient(180deg, #e6ecf5, #b6c0d0); }
+.pal-bar.b2 { background: linear-gradient(180deg, #f0b483, #cd7f45); }
+
+.pal-section-t { font-family: var(--font-d); font-size: .95rem; color: var(--text); margin: 1.1rem .2rem .5rem; }
+.pal-ranking { display: flex; flex-direction: column; gap: .4rem; }
+.pal-row { display: flex; align-items: center; gap: .6rem; padding: .5rem .7rem; border-radius: 14px;
+  background: var(--surface-1); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.pal-row.lead { border-color: color-mix(in srgb, var(--gold) 55%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 12%, var(--surface-1)), var(--surface-1)); }
+.pal-rank { font-weight: 900; min-width: 26px; text-align: center; color: var(--muted); }
+.pal-name { flex: 1; font-weight: 900; color: var(--text); display: flex; align-items: center; gap: .4rem; }
+.pal-streak { font-size: .68rem; font-weight: 900; color: #fff; background: linear-gradient(135deg,#f97316,#ef4444); padding: .1rem .4rem; border-radius: 999px; }
+.pal-stats { font-size: .72rem; font-weight: 700; color: var(--muted); text-align: right; }
+.pal-stats b { color: var(--text); }
+
+.pal-records { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.pal-rec { display: flex; align-items: center; gap: .55rem; padding: .6rem .7rem; border-radius: 14px;
+  background: var(--surface-1); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.pal-rec-ic { font-size: 1.5rem; }
+.pal-rec b { display: block; font-family: var(--font-d); font-size: .9rem; color: var(--text); }
+.pal-rec small { font-size: .66rem; font-weight: 700; color: var(--muted); }
+
+.pal-badges { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.pal-badge { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .1rem; padding: .7rem .5rem; border-radius: 14px;
+  background: var(--surface-2); border: 1px solid var(--border); opacity: .5; filter: grayscale(.7); }
+.pal-badge.on { opacity: 1; filter: none; background: linear-gradient(150deg, color-mix(in srgb, var(--gold) 16%, var(--surface-1)), var(--surface-1)); border-color: color-mix(in srgb, var(--gold) 45%, transparent); box-shadow: 0 6px 16px color-mix(in srgb, var(--gold) 22%, transparent); }
+.pal-badge-e { font-size: 1.7rem; }
+.pal-badge-l { font-weight: 900; font-size: .76rem; color: var(--text); }
+.pal-badge-d { font-size: .62rem; font-weight: 700; color: var(--muted); line-height: 1.25; }
+
+.pal-reset { display: block; margin: 1.4rem auto .4rem; padding: .5rem 1rem; border-radius: 999px; font-weight: 800; font-size: .78rem;
+  background: transparent; color: var(--muted); border: 1px solid var(--border); }

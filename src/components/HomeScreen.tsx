@@ -14,6 +14,7 @@ interface HomeScreenProps {
   onSelectPlayer: (name: string, color: string, avatar?: string) => void;
   onSetAvatar: (avatar: string) => void;
   onContinue: () => void;
+  onPalmares: () => void;
   onToast: (msg: string) => void;
 }
 
@@ -26,7 +27,7 @@ function persistAvatars(m: Record<string, string>) {
 }
 const CUSTOM = "__custom";
 
-export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvatar, onContinue, onToast }: HomeScreenProps) {
+export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvatar, onContinue, onPalmares, onToast }: HomeScreenProps) {
   const [customName, setCustomName] = useState("");
   const [avatars, setAvatars] = useState<Record<string, string>>(loadAvatars);
   const [studio, setStudio] = useState(false);
@@ -142,6 +143,10 @@ export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvat
         <motion.button className="btn btn-primary big-btn" onClick={handleContinue}
           whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
           Choisir un jeu →
+        </motion.button>
+
+        <motion.button className="home-palmares" onClick={onPalmares} whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
+          🏆 Palmarès de la famille
         </motion.button>
       </motion.div>
     </div>
