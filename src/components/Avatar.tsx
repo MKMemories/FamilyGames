@@ -90,6 +90,17 @@ function BackHair({ a, c, cd }: { a: AvatarT; c: string; cd: string }) {
       return <path d="M26 42 q-3 20 2 30 h44 q5 -10 2 -30 q-6 16 -24 16 q-18 0 -24 -16 z" fill={c} />;
     case 11: // Voile
       return <path d="M20 44 q0 -30 30 -30 q30 0 30 30 q0 30 -6 42 h-12 q6 -18 4 -34 q-2 -18 -16 -18 q-14 0 -16 18 q-2 16 4 34 h-12 q-6 -12 -6 -42 z" fill={c} />;
+    case 13: // Rideau — mi-long qui encadre
+      return <path d="M26 42 q-2 20 2 30 h44 q4 -10 2 -30 q-6 16 -24 16 q-18 0 -24 -16 z" fill={c} />;
+    case 15: // Tresses — deux nattes le long du visage
+      return <g fill={c}>
+        <path d="M25 40 q-3 22 1 42 h6 q-3 -18 -1 -42 z" /><path d="M75 40 q3 22 -1 42 h-6 q3 -18 1 -42 z" />
+        <g fill={cd} opacity=".6"><path d="M26 48 h5 M27 56 h5 M27 64 h5 M27 72 h5" stroke={cd} strokeWidth="1.2" /><path d="M69 48 h5 M69 56 h5 M69 64 h5 M69 72 h5" stroke={cd} strokeWidth="1.2" /></g>
+      </g>;
+    case 16: // Carré (bob)
+      return <path d="M25 42 q-1 -28 25 -28 q26 0 25 28 q0 17 -3 27 q-3 2 -6 1 q3 -16 1 -30 q-17 8 -34 0 q-2 14 1 30 q-3 1 -6 -1 q-3 -10 -3 -27 z" fill={c} />;
+    case 17: // Frange effilée (long dégradé)
+      return <path d="M23 42 q-4 30 4 44 h46 q8 -14 4 -44 q-6 18 -13 8 q-4 15 -14 15 q-10 0 -14 -15 q-7 10 -13 -8 z" fill={c} />;
     default: return null;
   }
 }
@@ -117,6 +128,19 @@ function FrontHair({ a, c, cd }: { a: AvatarT; c: string; cd: string }) {
     case 10: // Ondulé
       return <path d="M28 40 q-2 -24 22 -24 q24 0 22 24 q-5 -10 -11 -8 q3 5 -3 7 q-3 -9 -8 -9 q-5 0 -8 9 q-6 -2 -3 -7 q-6 -2 -11 8 z" fill={c} />;
     case 11: return null; // Voile : géré à l'arrière
+    case 12: // Dégradé (fade + touffe texturée, côtés rasés)
+      return <path d="M34 33 q-1 -20 16 -20 q17 0 16 20 q-3 -9 -8 -6 q0 -6 -8 -6 q-8 0 -8 6 q-5 -3 -8 6 q1 -3 2 -1 z" fill={c} />;
+    case 13: // Rideau (raie au milieu, mèches qui tombent)
+      return <path d="M28 41 q-2 -27 22 -27 q24 0 22 27 q-4 -11 -9 -10 q-2 9 -7 13 q-3 -6 -6 -6 q-3 0 -6 6 q-5 -4 -7 -13 q-5 -1 -9 10 z" fill={c} />;
+    case 14: // Man bun (chignon haut + côtés courts / undercut)
+      return <><circle cx="50" cy="13" r="6" fill={c} /><rect x="47.5" y="15" width="5" height="6" fill={c} />
+        <path d="M32 34 q-1 -17 18 -18 q19 1 18 18 q-5 -9 -18 -9 q-13 0 -18 9 z" fill={c} /></>;
+    case 15: // Tresses (raie centrale, sommet lisse)
+      return <path d="M30 40 q0 -25 20 -25 q20 0 20 25 q-5 -11 -9 -9 q-4 6 -11 6 q-7 0 -11 -6 q-4 -2 -9 9 z" fill={c} />;
+    case 16: // Carré (frange nette)
+      return <path d="M28 40 q0 -25 22 -25 q22 0 22 25 q-6 -13 -22 -13 q-16 0 -22 13 z" fill={c} />;
+    case 17: // Frange effilée (rideau long)
+      return <path d="M28 42 q-2 -28 22 -28 q24 0 22 28 q-4 -12 -9 -11 q-3 10 -8 14 q-2 -8 -5 -8 q-3 0 -5 8 q-5 -4 -8 -14 q-5 -1 -9 11 z" fill={c} />;
     default: return null;
   }
   void cd;
@@ -209,10 +233,20 @@ function Outfit({ a, c, skin, skinD, id }: { a: AvatarT; c: string; skin: string
       return <g><path d="M18 100 q-6 -26 8 -34 q6 20 24 20 q18 0 24 -20 q14 8 8 34 z" fill={shade(c, -26)} />
         <g fill={c}>{base}</g>
         <circle cx="50" cy="82" r="8" fill="#fff" opacity=".95" /><path d="M50 76 l5 9 h-10 z" fill={c} /></g>;
-    case 4: // Maillot de sport
-      return <g><g fill={c}>{base}</g>
-        <path d="M40 66 L50 74 L60 66 l4 3 L50 80 L36 69 z" fill="#fff" opacity=".9" />
-        <text x="50" y="94" fontSize="12" fontWeight="900" fill="#fff" textAnchor="middle" fontFamily="Arial">10</text></g>;
+    case 4: { // Maillot de foot — couleurs PSG (bleu marine, bande rouge bordée de blanc)
+      const cid = `${id}jrs`;
+      return <g>
+        <defs><clipPath id={cid}><path d="M18 100 q0 -30 32 -34 q32 4 32 34 z" /></clipPath></defs>
+        <g clipPath={`url(#${cid})`}>
+          <rect x="14" y="60" width="72" height="42" fill="#11224f" />
+          <rect x="42" y="60" width="16" height="42" fill="#e30613" />
+          <rect x="40.5" y="60" width="1.6" height="42" fill="#fff" />
+          <rect x="57.9" y="60" width="1.6" height="42" fill="#fff" />
+        </g>
+        <path d="M40 66 q10 7 20 0 q-3 6 -10 6 q-7 0 -10 -6 z" fill="#fff" />
+        <text x="50" y="95" fontSize="10" fontWeight="900" fill="#fff" textAnchor="middle" fontFamily="Arial">10</text>
+      </g>;
+    }
     case 5: // Robe
       return <g><path d="M20 100 q2 -30 30 -34 q28 4 30 34 z" fill={c} />
         <path d="M40 66 q10 8 20 0 q-3 7 -10 7 q-7 0 -10 -7 z" fill={shade(c, 14)} />

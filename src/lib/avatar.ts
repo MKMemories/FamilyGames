@@ -40,25 +40,30 @@ export const BGS: { from: string; to: string }[] = [
 
 export const HAIR_COLORS = ["#2b2b33", "#4a3120", "#7a4a24", "#b06a2c", "#e0b34a", "#ede4d3", "#c0392b", "#7b2ff7", "#2e86de", "#12b886", "#ff5b93"];
 
-/* Identifiants de style (l'ordre = l'index stocké) */
-export const HAIRS = ["Chauve", "Court", "Brosse", "Bouclé", "Afro", "Chignon", "Couettes", "Long", "Crête", "Piquant", "Ondulé", "Voile"] as const;
+/* Identifiants de style (l'ordre = l'index stocké — ne jamais réordonner :
+   on ajoute les nouveautés à la fin pour ne pas casser les avatars enregistrés) */
+export const HAIRS = [
+  "Chauve", "Court", "Brosse", "Bouclé", "Afro", "Chignon", "Couettes", "Long", "Crête", "Piquant", "Ondulé", "Voile",
+  // ── Coupes tendance 2026 ──
+  "Dégradé", "Rideau", "Man bun", "Tresses", "Carré", "Frange",
+] as const;
 export const EYES = ["Normal", "Joyeux", "Clin d'œil", "Étoilé", "Endormi", "Surpris"] as const;
 export const MOUTHS = ["Sourire", "Rire", "Neutre", "Étonné", "Malicieux", "Langue"] as const;
 export const OUTFITS = ["Tee-shirt", "Sweat", "Costume", "Héros", "Maillot", "Robe", "Magicien", "Universitaire", "Astronaute", "Ninja", "Rockstar", "Kimono"] as const;
 export const FACIALS = ["Aucune", "Barbe", "Moustache", "Bouc"] as const;
 export const ACCESSORIES = ["Aucun", "Lunettes", "Soleil", "Masque héros", "Casquette", "Couronne", "Casque audio", "Bonnet", "Cache-œil", "Bandeau"] as const;
 
-/* Teinte principale des tenues (emblèmes / cols) */
-export const OUTFIT_COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#f59e0b", "#ec4899", "#0ea5e9", "#111827"];
+/* Teinte principale des tenues (emblèmes / cols). L'indice 4 (Maillot) = bleu PSG. */
+export const OUTFIT_COLORS = ["#ef4444", "#3b82f6", "#22c55e", "#a855f7", "#11224f", "#ec4899", "#0ea5e9", "#111827"];
 
 export const DEFAULT_AVATAR: Avatar = { skin: 1, bg: 1, hair: 1, hairColor: 1, eyes: 0, mouth: 0, outfit: 0, facial: 0, accessory: 0 };
 
 /* Avatars par défaut des membres de la famille (personnalisables ensuite). */
 export const PRESET_AVATARS: Record<string, Avatar> = {
-  Mohamed:  { skin: 2, bg: 2, hair: 1, hairColor: 1, eyes: 0, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
-  Saoussen: { skin: 1, bg: 12, hair: 7, hairColor: 1, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
-  Sara:     { skin: 1, bg: 0, hair: 6, hairColor: 2, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
-  Lilya:    { skin: 1, bg: 3, hair: 7, hairColor: 2, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },
+  Mohamed:  { skin: 2, bg: 2, hair: 12, hairColor: 1, eyes: 0, mouth: 0, outfit: 4, facial: 0, accessory: 0 }, // dégradé
+  Saoussen: { skin: 1, bg: 12, hair: 16, hairColor: 1, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 }, // carré
+  Sara:     { skin: 1, bg: 0, hair: 15, hairColor: 2, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 }, // tresses
+  Lilya:    { skin: 1, bg: 3, hair: 7, hairColor: 2, eyes: 1, mouth: 0, outfit: 4, facial: 0, accessory: 0 },  // long
 };
 
 /* ── Packs « à la mode » : un look complet en un tap ── */
