@@ -25,6 +25,7 @@ const PetitBac = lazy(() => import("./components/games/PetitBac").then(m => ({ d
 const Bombe = lazy(() => import("./components/games/Bombe").then(m => ({ default: m.Bombe })));
 const Des = lazy(() => import("./components/games/Des").then(m => ({ default: m.Des })));
 const Blokus = lazy(() => import("./components/games/Blokus").then(m => ({ default: m.Blokus })));
+const ScrabbleBoard = lazy(() => import("./components/games/ScrabbleBoard").then(m => ({ default: m.ScrabbleBoard })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -416,6 +417,9 @@ function App() {
           )}
           {activeGame === "blokus" && (
             <Blokus room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
+          )}
+          {activeGame === "grandscrabble" && (
+            <ScrabbleBoard room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
         </Suspense>
       )}

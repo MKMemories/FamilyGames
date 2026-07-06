@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble";
 
 export interface MemberPreset {
   name: string;
@@ -108,6 +108,16 @@ export interface Room {
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round
+  // Grand Scrabble (plateau 15×15)
+  gsPhase?: "play" | "over" | null;
+  gsBoard?: (0 | { l: string; blank?: boolean })[][]; // 0 = case vide
+  gsRacks?: Record<string, string[]>;
+  gsBag?: string[];
+  gsOrder?: string[];
+  gsTurn?: number;                                    // index dans gsOrder
+  gsHistory?: { player: string; word: string; pts: number }[];
+  gsPasses?: number;                                  // passes/échanges consécutifs
+  gsLastCells?: [number, number][];
   // Mode Soirée famille (enchaînement de jeux, score cumulé)
   partyMode?: boolean;
   partyScores?: Record<string, number>;              // cumul de points de soirée
