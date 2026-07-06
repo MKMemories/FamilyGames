@@ -28,6 +28,7 @@ export function HomeScreen({ playerName, onSelectPlayer, onContinue, onToast }: 
 
   return (
     <div className="screen home-screen">
+      <div className="home-aurora" aria-hidden />
       <div className="home-deco">
         <span>🎲</span><span>🃏</span><span>♟️</span><span>🔤</span><span>⏱️</span><span>🧠</span>
       </div>
@@ -50,6 +51,11 @@ export function HomeScreen({ playerName, onSelectPlayer, onContinue, onToast }: 
           <h1 className="logo-title">Family Game Night</h1>
           <div className="logo-sub">KHELIJ</div>
           <p className="home-tagline">Le salon de jeux de la famille — chacun son écran, tous ensemble ✨</p>
+          <div className="home-chips">
+            <span>🎮 20 jeux</span>
+            <span>👨‍👩‍👧‍👦 2–8 joueurs</span>
+            <span>🤖 Solo & multi</span>
+          </div>
         </div>
 
         <div className="player-presets">

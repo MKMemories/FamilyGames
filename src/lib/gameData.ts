@@ -18,27 +18,39 @@ export const MEMBER_PRESETS: MemberPreset[] = [
   { name: "Lilya", color: "#67d9b5", emoji: "🧒" },
 ];
 
+/* Ordre pensé pour la soirée famille : les grands jeux à 4 d'abord,
+   puis les duels à 2, puis l'aventure solo. */
 export const GAMES: Game[] = [
-  { id: "scrabble", name: "Mot pour Mot", emoji: "🔤", desc: "Scrabble familial — forme des mots, marque des points", min: 2, max: 4, color: "#14b8a6" },
-  { id: "chess", name: "Échecs", emoji: "♟️", desc: "Échecs classique 8×8 — Rois, reines, stratégie", min: 2, max: 2, color: "#6366f1" },
-  { id: "checkers", name: "Dames", emoji: "⬛", desc: "Jeu de dames — captures et dames couronnées", min: 2, max: 2, color: "#f59e0b" },
-  { id: "connect4", name: "Puissance 4", emoji: "🔴", desc: "Aligne 4 jetons avant ton adversaire", min: 2, max: 2, color: "#ef4444" },
-  { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Questions sur la famille, la culture et le monde", min: 2, max: 4, color: "#ec4899" },
-  { id: "defi", name: "Défis Chrono", emoji: "⏱️", desc: "Mini-défis rigolos — le plus rapide gagne", min: 2, max: 4, color: "#84cc16" },
-  { id: "justeprix", name: "Le Juste Prix", emoji: "💰", desc: "Estime le prix d'un objet — le plus proche gagne !", min: 1, max: 4, color: "#fb923c" },
-  { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#22c55e" },
-  { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#f43f5e" },
-  { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#10b981" },
-  { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#3b82f6" },
-  { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6" },
-  { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8" },
-  { id: "petitbac", name: "Petit Bac", emoji: "🅰️", desc: "Une lettre, des catégories — remplis plus vite que les autres", min: 2, max: 4, color: "#0ea5e9" },
-  { id: "bombe", name: "Mot Bombe", emoji: "💣", desc: "Trouve un mot avec la syllabe avant que la bombe explose !", min: 2, max: 4, color: "#f97316" },
-  { id: "des", name: "Bluff des Dés", emoji: "🎲", desc: "Mise, bluffe et démasque les menteurs", min: 2, max: 4, color: "#a855f7" },
-  { id: "blokus", name: "Territoires", emoji: "🧩", desc: "Pose tes pièces, bloque les autres, conquiers le plateau", min: 2, max: 4, color: "#0d9488" },
-  { id: "grandscrabble", name: "Grand Scrabble", emoji: "🔠", desc: "Le vrai Scrabble : plateau 15×15, cases bonus et mots croisés", min: 2, max: 4, color: "#0f766e" },
-  { id: "monopoly", name: "Monopoly KHELIJ", emoji: "🏦", desc: "Achète, construis, ruine la famille — le grand plateau immobilier", min: 2, max: 4, color: "#16a34a" },
-  { id: "uno", name: "UNO KHELIJ", emoji: "🎴", desc: "Assortis couleur ou chiffre, cartes spéciales… et n'oublie pas de crier UNO !", min: 2, max: 4, color: "#ef4444" },
+  /* ── 🎉 EN FAMILLE (2–4 joueurs et +) ── les pépites en tête ── */
+  { id: "uno", name: "UNO KHELIJ", emoji: "🎴", desc: "Assortis couleur ou chiffre, dégaine les cartes spéciales… et crie UNO !", min: 2, max: 4, color: "#ef4444", grad: "#f97316", cat: "famille", star: true },
+  { id: "monopoly", name: "Monopoly KHELIJ", emoji: "🏦", desc: "Achète, construis, ruine la famille — le grand plateau immobilier", min: 2, max: 4, color: "#16a34a", grad: "#4ade80", cat: "famille", star: true },
+  { id: "grandscrabble", name: "Grand Scrabble", emoji: "🔠", desc: "Le vrai Scrabble : plateau 15×15, cases bonus et mots croisés", min: 2, max: 4, color: "#0f766e", grad: "#2dd4bf", cat: "famille", star: true },
+  { id: "dessin", name: "Dessinez, c'est gagné", emoji: "🎨", desc: "Dessine un mot et fais deviner les autres", min: 2, max: 4, color: "#22c55e", grad: "#4ade80", cat: "famille", star: true },
+  { id: "quiz", name: "Quiz KHELIJ", emoji: "🧠", desc: "Questions sur la famille, la culture et le monde", min: 2, max: 4, color: "#ec4899", grad: "#f472b6", cat: "famille" },
+  { id: "petitbac", name: "Petit Bac", emoji: "🅰️", desc: "Une lettre, des catégories — remplis plus vite que les autres", min: 2, max: 4, color: "#0ea5e9", grad: "#38bdf8", cat: "famille" },
+  { id: "bombe", name: "Mot Bombe", emoji: "💣", desc: "Trouve un mot avec la syllabe avant que la bombe explose !", min: 2, max: 4, color: "#f97316", grad: "#fbbf24", cat: "famille" },
+  { id: "des", name: "Bluff des Dés", emoji: "🎲", desc: "Mise, bluffe et démasque les menteurs", min: 2, max: 4, color: "#a855f7", grad: "#c084fc", cat: "famille" },
+  { id: "blokus", name: "Territoires", emoji: "🧩", desc: "Pose tes pièces, bloque les autres, conquiers le plateau", min: 2, max: 4, color: "#0d9488", grad: "#2dd4bf", cat: "famille" },
+  { id: "defi", name: "Défis Chrono", emoji: "⏱️", desc: "Mini-défis rigolos — le plus rapide gagne", min: 2, max: 4, color: "#84cc16", grad: "#bef264", cat: "famille" },
+  { id: "justeprix", name: "Le Juste Prix", emoji: "💰", desc: "Estime le prix d'un objet — le plus proche gagne !", min: 1, max: 4, color: "#fb923c", grad: "#fbbf24", cat: "famille" },
+  { id: "scrabble", name: "Mot pour Mot", emoji: "🔤", desc: "Scrabble familial — forme des mots, marque des points", min: 2, max: 4, color: "#14b8a6", grad: "#2dd4bf", cat: "famille" },
+  { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#f43f5e", grad: "#fb7185", cat: "famille" },
+  { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#10b981", grad: "#34d399", cat: "famille" },
+  /* ── ⚔️ DUEL (2 joueurs) ── */
+  { id: "chess", name: "Échecs", emoji: "♟️", desc: "Échecs classique 8×8 — rois, reines, stratégie", min: 2, max: 2, color: "#6366f1", grad: "#818cf8", cat: "duo" },
+  { id: "checkers", name: "Dames", emoji: "⬛", desc: "Jeu de dames — captures et dames couronnées", min: 2, max: 2, color: "#f59e0b", grad: "#fbbf24", cat: "duo" },
+  { id: "connect4", name: "Puissance 4", emoji: "🔴", desc: "Aligne 4 jetons avant ton adversaire", min: 2, max: 2, color: "#ef4444", grad: "#f87171", cat: "duo" },
+  { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#3b82f6", grad: "#60a5fa", cat: "duo" },
+  { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6", grad: "#a78bfa", cat: "duo" },
+  /* ── 🧭 AVENTURE SOLO ── */
+  { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8", grad: "#7dd3fc", cat: "solo" },
+];
+
+/* Rubriques de la ludothèque, dans l'ordre d'affichage. */
+export const GAME_SECTIONS: { cat: import("../types").GameCat; label: string; icon: string; hint: string }[] = [
+  { cat: "famille", label: "En famille", icon: "🎉", hint: "À 2, 3 ou 4 — le top pour la soirée" },
+  { cat: "duo", label: "Duel à deux", icon: "⚔️", hint: "Face à face, ou contre l'ordinateur" },
+  { cat: "solo", label: "Aventure solo", icon: "🧭", hint: "Rien que pour toi" },
 ];
 
 /* ── L'Imposteur : paires de mots (civil / imposteur, proches mais différents) ── */

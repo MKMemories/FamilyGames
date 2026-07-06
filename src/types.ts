@@ -8,6 +8,8 @@ export interface MemberPreset {
   emoji: string;
 }
 
+export type GameCat = "famille" | "duo" | "solo";
+
 export interface Game {
   id: GameId;
   name: string;
@@ -16,6 +18,9 @@ export interface Game {
   min: number;
   max: number;
   color: string;
+  grad: string;        // 2e teinte du dégradé du médaillon
+  cat: GameCat;        // rubrique de la ludothèque
+  star?: boolean;      // pépite mise en avant (soirée famille)
 }
 
 export interface Player {

@@ -1578,3 +1578,118 @@ input { border: none; outline: none; }
 button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18s, background .2s, border-color .18s, opacity .15s; }
 .game-card, .preset-btn, .setup-card, .difficulty-btn, .quiz-opt-btn, .player-row { transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s, border-color .2s, background .25s; }
 .turn-indicator { transition: background .3s ease, color .3s ease; }
+
+/* ══════════════════════════════════════════════════════════════
+   PREMIUM LUDOTHÈQUE + HERO — vitrine des jeux (top du top)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Aurore ambiante fluide, dérive lente (perf : transform only) */
+.pick-aurora, .home-aurora {
+  position: fixed; inset: -28%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38% 34% at 18% 12%, color-mix(in srgb, var(--primary) 46%, transparent), transparent 70%),
+    radial-gradient(40% 36% at 84% 8%,  color-mix(in srgb, var(--accent)  44%, transparent), transparent 70%),
+    radial-gradient(46% 42% at 50% 110%, color-mix(in srgb, var(--green)   32%, transparent), transparent 72%);
+  filter: blur(22px) saturate(1.12);
+  opacity: .5;
+  animation: auroraDrift 17s ease-in-out infinite alternate;
+}
+@keyframes auroraDrift {
+  0%   { transform: translate3d(-2%, 0, 0)  scale(1); }
+  100% { transform: translate3d(2%, -4%, 0) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) { .pick-aurora, .home-aurora { animation: none; } }
+
+/* En-tête de la ludothèque */
+.pick-screen { padding-top: .4rem; position: relative; }
+.pick-header {
+  position: sticky; top: 0; z-index: 12;
+  margin: 0 -1rem .3rem; padding: .5rem 1rem .55rem;
+  background: linear-gradient(180deg, var(--bg) 58%, color-mix(in srgb, var(--bg) 8%, transparent));
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.pick-title { flex: 1; display: flex; flex-direction: column; align-items: center; gap: .05rem; }
+.pick-title h2 { font-family: var(--font-d); font-size: 1.3rem; color: var(--text); }
+.pick-sub { font-size: .64rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+/* Rubriques */
+.pick-section { margin-bottom: 1.5rem; }
+.section-head { display: flex; align-items: center; gap: .7rem; margin: .2rem .15rem .7rem; }
+.section-icon {
+  width: 42px; height: 42px; flex: none; display: grid; place-items: center; font-size: 1.3rem;
+  border-radius: 13px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--primary) 26%, var(--surface-1)), color-mix(in srgb, var(--accent) 24%, var(--surface-1)));
+  box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.45);
+}
+.section-text { display: flex; flex-direction: column; line-height: 1.15; flex: 1; }
+.section-label { font-family: var(--font-d); font-size: 1.05rem; color: var(--text); }
+.section-hint { font-size: .72rem; font-weight: 700; color: var(--muted); }
+.section-count {
+  font-size: .72rem; font-weight: 900; color: var(--muted); flex: none;
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: .16rem .5rem; border-radius: 999px;
+}
+
+/* Cartes-médaillon premium */
+.games-grid { grid-template-columns: 1fr 1fr; gap: .8rem; margin-top: 0; }
+.game-card {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: 1.15rem .75rem 1rem; border-radius: 1.3rem;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gc) 13%, var(--surface-1)), var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--gc) 26%, var(--border));
+  box-shadow: var(--shadow); color: var(--text); text-align: center;
+}
+.game-card::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(120% 82% at 50% -18%, color-mix(in srgb, var(--gc) 52%, transparent), transparent 66%);
+  opacity: .82; transition: opacity .3s, transform .42s;
+}
+.game-card:hover { box-shadow: 0 20px 46px color-mix(in srgb, var(--gc) 36%, transparent); border-color: color-mix(in srgb, var(--gc) 52%, transparent); }
+.game-card:hover::before { opacity: 1; transform: scale(1.12); }
+.game-card.star { border-color: color-mix(in srgb, var(--gold) 55%, transparent); }
+
+.game-medallion {
+  position: relative; width: 64px; height: 64px; margin-bottom: .12rem;
+  display: grid; place-items: center; border-radius: 50%;
+  background: linear-gradient(150deg, var(--gc), var(--gc2, var(--gc)));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--gc) 48%, transparent),
+    inset 0 2px 3px rgba(255,255,255,.5), inset 0 -3px 7px rgba(0,0,0,.2);
+  overflow: hidden;
+}
+.game-emoji { font-size: 1.9rem; line-height: 1; margin: 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.28)); }
+.game-sheen {
+  position: absolute; top: -60%; left: -30%; width: 55%; height: 200%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: rotate(18deg) translateX(-160%); pointer-events: none;
+}
+.game-card:hover .game-sheen { animation: sheenSweep .8s ease; }
+@keyframes sheenSweep { to { transform: rotate(18deg) translateX(420%); } }
+
+.game-name { font-family: var(--font-d); font-size: .98rem; line-height: 1.12; color: var(--text); }
+.game-desc { font-size: .7rem; font-weight: 700; line-height: 1.35; color: var(--muted); }
+.game-players {
+  display: inline-flex; align-items: center; gap: .3rem; margin-top: .12rem;
+  font-size: .68rem; font-weight: 800; color: var(--text);
+  background: color-mix(in srgb, var(--gc) 15%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--gc) 22%, transparent);
+  padding: .22rem .55rem; border-radius: 999px;
+}
+.gp-people { font-size: .85rem; }
+
+.game-ribbon {
+  position: absolute; top: .62rem; right: -1.7rem; transform: rotate(35deg); z-index: 2;
+  background: linear-gradient(135deg, var(--gold), #ffdb86);
+  color: #4a2d00; font-size: .56rem; font-weight: 900; letter-spacing: .03em;
+  padding: .12rem 1.7rem; box-shadow: 0 3px 8px rgba(0,0,0,.22);
+}
+
+/* Hero d'accueil premium */
+.home-screen { position: relative; }
+.home-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .4rem; margin-top: .9rem; }
+.home-chips span {
+  font-size: .72rem; font-weight: 800; color: var(--text);
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: .3rem .6rem; border-radius: 999px; box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
