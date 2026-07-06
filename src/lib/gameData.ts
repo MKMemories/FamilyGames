@@ -3,7 +3,7 @@ import type { Game, MemberPreset, GameId, Difficulty, StoredQuizQuestion } from 
 /* ── Solo vs Ordinateur ── */
 export const AI_ID = "zzz-ai";
 export const AI_PLAYER = { id: AI_ID, name: "Ordinateur", color: "#8b93a7", emoji: "🤖" };
-export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus", "grandscrabble"]);
+export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus", "grandscrabble", "monopoly"]);
 export function gameSupportsAI(g: GameId): boolean { return AI_GAMES.has(g); }
 export const DIFFICULTIES: { id: Difficulty; label: string; emoji: string; desc: string }[] = [
   { id: "facile", label: "Facile", emoji: "🙂", desc: "L'ordinateur joue simplement" },
@@ -37,6 +37,7 @@ export const GAMES: Game[] = [
   { id: "des", name: "Bluff des Dés", emoji: "🎲", desc: "Mise, bluffe et démasque les menteurs", min: 2, max: 4, color: "#a855f7" },
   { id: "blokus", name: "Territoires", emoji: "🧩", desc: "Pose tes pièces, bloque les autres, conquiers le plateau", min: 2, max: 4, color: "#0d9488" },
   { id: "grandscrabble", name: "Grand Scrabble", emoji: "🔠", desc: "Le vrai Scrabble : plateau 15×15, cases bonus et mots croisés", min: 2, max: 4, color: "#0f766e" },
+  { id: "monopoly", name: "Monopoly KHELIJ", emoji: "🏦", desc: "Achète, construis, ruine la famille — le grand plateau immobilier", min: 2, max: 4, color: "#16a34a" },
 ];
 
 /* ── L'Imposteur : paires de mots (civil / imposteur, proches mais différents) ── */
@@ -313,6 +314,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "des") return { dsPhase: null, dsDice: {}, dsCounts: {}, dsBid: null, dsRoundId: 0, dsOrder: [], dsReveal: null };
   if (game === "blokus") return { blkBoard: null, blkTurn: 0, blkOrder: [], blkRemaining: {}, blkPassed: {} };
   if (game === "grandscrabble") return { gsPhase: null, gsBoard: null, gsBag: [], gsRacks: {}, gsOrder: [], gsTurn: 0, gsHistory: [], gsPasses: 0 };
+  if (game === "monopoly") return { mono: null };
   return {};
 }
 

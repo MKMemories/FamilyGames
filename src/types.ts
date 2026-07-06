@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly";
 
 export interface MemberPreset {
   name: string;
@@ -118,6 +118,8 @@ export interface Room {
   gsHistory?: { player: string; word: string; pts: number }[];
   gsPasses?: number;                                  // passes/échanges consécutifs
   gsLastCells?: [number, number][];
+  // Monopoly (état complet du moteur, cf. monopolyEngine)
+  mono?: any;
   // Mode Soirée famille (enchaînement de jeux, score cumulé)
   partyMode?: boolean;
   partyScores?: Record<string, number>;              // cumul de points de soirée
