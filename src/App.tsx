@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { dbRef, set, get, onValue, update, remove } from "./lib/firebase";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { dbRef, set, get, onValue, update, remove, removeOnDisconnect, cancelOnDisconnect } from "./lib/firebase";
 import { uid, getInitData, buildBag, MEMBER_PRESETS, GAMES, AI_PLAYER, gameSupportsAI } from "./lib/gameData";
 import { HomeScreen } from "./components/HomeScreen";
 import { PickScreen } from "./components/PickScreen";
@@ -29,6 +29,22 @@ import { SoundToggle } from "./components/SoundToggle";
 import { RulesSheet } from "./components/RulesSheet";
 import { useTheme } from "./hooks/useTheme";
 import type { AppState, GameId, Room, Difficulty } from "./types";
+
+/* ── Reprise de session : on garde de quoi rejoindre le salon après un
+   rafraîchissement ou une mise en veille du téléphone. ── */
+const SESSION_KEY = "khelij_session";
+interface SavedSession {
+  roomId: string; game: GameId; playerId: string; playerName: string; playerColor: string; emoji: string;
+}
+function saveSession(s: SavedSession) {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+function loadSession(): SavedSession | null {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || "null"); } catch { return null; }
+}
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+}
 
 function App() {
   const [state, setState] = useState<AppState>({
@@ -73,6 +89,47 @@ function App() {
     unsubs.current.push(() => unsub());
   }, []);
 
+  /* ── Reprise de connexion : après un rafraîchissement / une veille, on
+     rejoint automatiquement le même salon (le joueur retrouve sa partie). ── */
+  const didReconnect = useRef(false);
+  useEffect(() => {
+    if (didReconnect.current) return;
+    didReconnect.current = true;
+    const sess = loadSession();
+    if (!sess) return;
+    (async () => {
+      const snap = await get(dbRef(`games/${sess.roomId}`));
+      const r = snap.exists() ? (snap.val() as Room) : null;
+      if (!r) { clearSession(); return; }
+      const playerObj = { id: sess.playerId, name: sess.playerName, color: sess.playerColor, emoji: sess.emoji };
+      await update(dbRef(`games/${sess.roomId}/players`), { [sess.playerId]: playerObj });
+      if ((r.scores || {})[sess.playerId] === undefined) {
+        await update(dbRef(`games/${sess.roomId}/scores`), { [sess.playerId]: 0 });
+      }
+      removeOnDisconnect(`games/${sess.roomId}/players/${sess.playerId}`);
+      const screen = r.status === "playing" ? "game" : r.status === "finished" ? "result" : "lobby";
+      setState(s => ({
+        ...s, game: sess.game, roomId: sess.roomId, playerId: sess.playerId,
+        playerName: sess.playerName, playerColor: sess.playerColor, isSolo: false, screen, room: r,
+      }));
+      subscribeRoom(sess.roomId);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* ── Migration d'hôte : si l'hôte n'est plus dans le salon (parti / déconnecté),
+     les joueurs restants élisent le même remplaçant (id le plus petit) ; seul
+     l'élu écrit hostId → aucune course, la partie ne se fige jamais. ── */
+  useEffect(() => {
+    if (!state.room || !state.roomId || !state.playerId || state.isSolo) return;
+    const ids = Object.keys(state.room.players || {});
+    if (ids.length === 0) return;
+    if (state.room.hostId && ids.includes(state.room.hostId)) return; // hôte présent
+    const newHost = [...ids].sort()[0];
+    if (newHost === state.playerId) update(dbRef(`games/${state.roomId}`), { hostId: newHost });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.room?.hostId, state.room?.players, state.roomId, state.playerId]);
+
   const createRoom = async () => {
     const { game, playerId, playerName, playerColor } = state;
     if (!game || !playerId || !playerName) { showToast("Choisis ton prénom d'abord !"); return; }
@@ -89,6 +146,8 @@ function App() {
       ...initData,
     };
     await set(dbRef(`games/${roomId}`), roomData);
+    saveSession({ roomId, game, playerId, playerName, playerColor: playerObj.color, emoji: playerObj.emoji });
+    removeOnDisconnect(`games/${roomId}/players/${playerId}`);
     setState(s => ({ ...s, roomId, isHost: true, isSolo: false, screen: "lobby" }));
     subscribeRoom(roomId);
   };
@@ -146,6 +205,8 @@ function App() {
     const preset = MEMBER_PRESETS.find(m => m.name === playerName);
     const playerObj = { id: playerId, name: playerName, color: playerColor || "#c9b8ff", emoji: preset?.emoji || "👤" };
     await update(dbRef(`games/${code}/players`), { [playerId]: playerObj });
+    saveSession({ roomId: code, game, playerId, playerName, playerColor: playerObj.color, emoji: playerObj.emoji });
+    removeOnDisconnect(`games/${code}/players/${playerId}`);
     setState(s => ({ ...s, roomId: code, isHost: false, isSolo: false, screen: "lobby" }));
     subscribeRoom(code);
   };
@@ -174,7 +235,9 @@ function App() {
 
   const leaveRoom = async () => {
     const { roomId, playerId } = state;
+    clearSession();
     if (roomId && playerId) {
+      cancelOnDisconnect(`games/${roomId}/players/${playerId}`);
       await remove(dbRef(`games/${roomId}/players/${playerId}`));
     }
     unsubs.current.forEach(u => u());
@@ -215,7 +278,10 @@ function App() {
     setState(s => ({ ...s, playerName: name || null, playerColor: color || null, playerId: id || null }));
   };
 
-  const { screen, game, room, roomId, playerId, playerName, isHost, isSolo } = state;
+  const { screen, game, room, roomId, playerId, playerName, isSolo } = state;
+  // L'hôte est DÉRIVÉ de room.hostId → la migration d'hôte prend effet
+  // instantanément partout (sinon l'ancien hôte parti fige la partie).
+  const isHost = room && playerId ? room.hostId === playerId : state.isHost;
 
   return (
     <>
