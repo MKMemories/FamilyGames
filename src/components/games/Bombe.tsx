@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import type { Room } from "../../types";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { BOMBE_SYLLABLES, BOMBE_WORDS } from "../../lib/bombeData";
@@ -167,6 +168,7 @@ export function Bombe({ room, roomId, playerId, isHost, isSolo, onLeave, onToast
       if (byId === playerId) { onToast(reason || "Mot invalide"); setShake(true); setTimeout(() => setShake(false), 450); }
       return;
     }
+    fx("point");
     const { syl, nextUsed } = pickSyllable(usedSyllables);
     const next = nextHolder(byId);
     update(dbRef(gamePath), {
@@ -186,6 +188,7 @@ export function Bombe({ room, roomId, playerId, isHost, isSolo, onLeave, onToast
      éliminé un score décroissant selon son ordre de sortie (départage par les
      cœurs restants du survivant). */
   const explode = () => {
+    fx("explode");
     const N = players.length;
     const cur = lives[holder] ?? 0;
     const remaining = Math.max(0, cur - 1);

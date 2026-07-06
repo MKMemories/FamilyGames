@@ -1250,7 +1250,7 @@ input { border: none; outline: none; }
 .theme-toggle {
   position: fixed;
   top: max(14px, env(safe-area-inset-top));
-  right: 14px;
+  right: 70px;
   z-index: 200;
   width: 46px; height: 46px;
   border-radius: 50%;

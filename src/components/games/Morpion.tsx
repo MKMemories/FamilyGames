@@ -1,4 +1,5 @@
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { bestMorpionMove } from "../../lib/ai/morpionAI";
 import type { Room } from "../../types";
@@ -62,6 +63,7 @@ export function Morpion({ room, roomId, playerId, isHost, isSolo, onLeave, onToa
     const w = findWin(next);
     const full = next.every(c => c !== "");
     const other = players.find(p => p.id !== moverId);
+    fx(w ? "victory" : "place");
     if (w) {
       update(dbRef(`games/${roomId}`), { mpCells: next, mpWinner: moverId, mpLine: w.line });
     } else if (full) {

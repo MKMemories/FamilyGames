@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { initCheckersBoard } from "../../lib/gameData";
 import {
   legalMoves,
@@ -113,6 +114,7 @@ export function Checkers({ room, roomId, playerId, onLeave }: CheckersProps) {
 
   const commitMove = (move: Move) => {
     const res = applyMoveFull(board, move, myIdx);
+    fx(move.type === "capture" ? "point" : "place");
     const upd: Record<string, unknown> = { board: res.board, selected: null, hints: [], chkChain: null, currentTurn: currentTurn + 1 };
     if (!hasAnyMove(res.board, oppIdx)) { upd.winner = (players[myIdx] || {}).name || "Gagnant"; upd.status = "finished"; }
     update(dbRef(`games/${roomId}`), upd);

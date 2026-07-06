@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import type { Room } from "../../types";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { PB_CATEGORY_POOL, PB_LETTERS, pbStripAccents, pbAiAnswer } from "../../lib/petitBacData";
@@ -450,7 +451,7 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
             <div className="pb-speed-hint">⚡ Le premier à finir gagne un bonus… s'il a bien répondu !</div>
 
             <div className="pb-fill-actions">
-              <button className="pb-btn pb-btn-stop" onClick={submit}>
+              <button className="pb-btn pb-btn-stop" onClick={() => { fx("start"); submit(); }}>
                 🛑 STOP — j'ai fini !
               </button>
             </div>

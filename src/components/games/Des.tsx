@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import type { Room } from "../../types";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { decideDesMove } from "../../lib/desAI";
@@ -145,11 +146,13 @@ export function Des({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }
   const doRaise = () => {
     if (!myTurn) return;
     if (!isLegal(bidQty, bidFace)) { onToast("Ta mise doit être plus forte"); return; }
+    fx("tap");
     raise(playerId, bidQty, bidFace);
   };
 
   const callBluff = (callerId: string) => {
     if (!bid) return;
+    fx("warn");
     let actual = 0;
     order.forEach(id => {
       if ((counts[id] ?? 0) > 0) actual += (dice[id] || []).filter(x => x === bid.face).length;

@@ -25,6 +25,7 @@ import { Des } from "./components/games/Des";
 import { Blokus } from "./components/games/Blokus";
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { SoundToggle } from "./components/SoundToggle";
 import { RulesSheet } from "./components/RulesSheet";
 import { useTheme } from "./hooks/useTheme";
 import type { AppState, GameId, Room, Difficulty } from "./types";
@@ -218,6 +219,7 @@ function App() {
 
   return (
     <>
+      <SoundToggle />
       {screen !== "game" && <ThemeToggle theme={theme} onToggle={toggleTheme} />}
 
       {screen === "home" && (

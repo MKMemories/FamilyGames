@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { checkConnect4Win } from "../../lib/gameData";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import { bestConnect4Move } from "../../lib/ai/connect4AI";
@@ -35,6 +36,7 @@ export function Connect4({ room, roomId, playerId, onLeave }: Connect4Props) {
     nb[row][col] = moverIdx + 1;
     const won = checkConnect4Win(nb, row, col, moverIdx + 1);
     const full = nb.every(r => r.every(c => c !== 0));
+    fx(won ? "point" : "place");
     const upd: any = { board: nb, currentTurn: currentTurn + 1 };
     if (won) { upd.winner = players[moverIdx]?.name; upd.status = "finished"; upd.scores = { ...(room.scores || {}), [moverId]: ((room.scores || {})[moverId] || 0) + 10 }; }
     else if (full) { upd.winner = "Égalité"; upd.status = "finished"; }

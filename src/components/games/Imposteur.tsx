@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import type { Room } from "../../types";
 import { IMPOSTEUR_WORDS } from "../../lib/gameData";
 
@@ -114,6 +115,7 @@ export function Imposteur({ room, roomId, playerId, isHost, isSolo, onLeave, onT
     if (phase !== "vote") return;
     if (targetId === playerId) return; // pas de vote pour soi-même
     if (votes[playerId] === targetId) return; // pas de doublon inutile
+    fx("vote");
     update(dbRef(gamePath), { [`impVotes/${playerId}`]: targetId });
   };
 

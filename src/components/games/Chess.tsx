@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { CHESS_INIT, CHESS_UNICODE } from "../../lib/gameData";
 import { legalMoves, applyMove, isPromotion, statusFor, type Ctx } from "../../lib/chessRules";
 import { useTrackedPieces } from "../../lib/pieceTracking";
@@ -43,8 +44,10 @@ export function Chess({ room, roomId, playerId, onLeave }: ChessProps) {
     const moverIdx = currentTurn % 2;          // 0 = white, 1 = black
     const moverWhite = moverIdx === 0;
     const mover = players[moverIdx];
+    const wasCapture = board[to[0]][to[1]] !== "";
     const { board: nb, castle, ep } = applyMove(board, from, to, ctx, promoteTo);
     const st = statusFor(nb, !moverWhite, { castle, ep }); // status for the opponent (next to move)
+    fx(st.status === "checkmate" ? "victory" : st.status === "check" ? "warn" : wasCapture ? "point" : "place");
 
     const upd: Record<string, unknown> = {
       board: nb,

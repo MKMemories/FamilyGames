@@ -4,6 +4,7 @@ import { dbRef, update } from "../../lib/firebase";
 import { QUIZ_BANK } from "../../lib/gameData";
 import { categoryVisual } from "../../lib/categoryVisual";
 import { JokerBar } from "../JokerBar";
+import { fx } from "../../lib/sound";
 import { initJokers, jokerCount, speedBonus, type JokerType } from "../../lib/jokers";
 import type { Room, StoredQuizQuestion } from "../../types";
 
@@ -327,6 +328,17 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
   /* Clear the optimistic pick + joker effects when the question changes. */
   useEffect(() => { setPendingAnswer(null); setFiftyHidden([]); }, [qIdx]);
 
+  /* Son de résultat pour le joueur local, une fois la révélation affichée. */
+  const revealSoundRef = useRef(-1);
+  useEffect(() => {
+    if (!revealed || !currentQ) return;
+    if (revealSoundRef.current === qIdx) return;
+    revealSoundRef.current = qIdx;
+    const mine = (room.quizAnswers || {})[playerId];
+    if (mine !== undefined) fx(mine === currentQ.answer ? "correct" : "wrong");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealed, qIdx]);
+
   /* Points de la manche (déterministe depuis l'état : base 10 + bonus de vitesse
      ⚡ aux plus rapides + joker ×2). Sert au scoring hôte ET à l'affichage. */
   const roundPoints = (): Record<string, number> => {
@@ -385,6 +397,7 @@ export function Quiz({ room, roomId, playerId, isHost, isSolo, onLeave }: QuizPr
 
   const handleAnswer = (chosen: string) => {
     if (myAnswer !== undefined || revealed || !currentQ) return;
+    fx("select");
     setPendingAnswer(chosen); // optimistic — instant highlight
     // Per-player PATH writes (never clobber). Timestamp drives the ⚡ speed bonus;
     // the host tallies base + speed + ×2 at reveal time.

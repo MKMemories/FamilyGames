@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { useSoloAI } from "../../hooks/useSoloAI";
 import type { Room } from "../../types";
 import type { Coord, Piece } from "../../lib/blokusPieces";
@@ -171,6 +172,7 @@ export function Blokus({ room, roomId, playerId, isHost, isSolo, onLeave, onToas
     for (const [r, c] of abs) nb[r][c] = moverIndex + 1;
     const rem = (remaining[mover] ?? []).filter(id => id !== pieceId);
     const nextTurn = nextActiveTurn(turn, order, passed);
+    fx("place");
     update(dbRef(`games/${roomId}`), {
       blkBoard: nb,
       [`blkRemaining/${mover}`]: rem,

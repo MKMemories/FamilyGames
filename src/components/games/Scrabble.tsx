@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
 import { LETTER_VALS } from "../../lib/gameData";
 import { loadFrenchDict, isValidWord, suggestFromRack } from "../../lib/frenchDict";
+import { fx } from "../../lib/sound";
 import type { Room } from "../../types";
 
 interface ScrabbleProps {
@@ -40,10 +41,12 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     if (sel.includes(idx)) {
       const pos = sel.lastIndexOf(idx);
       sel.splice(pos, 1);
+      fx("tap");
       const newWord = roundWord.slice(0, -1);
       update(dbRef(`games/${roomId}`), { selectedTiles: sel, roundWord: newWord });
     } else {
       sel.push(idx);
+      fx("place");
       const newWord = roundWord + rack[idx];
       update(dbRef(`games/${roomId}`), { selectedTiles: sel, roundWord: newWord });
     }
@@ -62,6 +65,7 @@ export function Scrabble({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     }
 
     const pts = word.split("").reduce((s, l) => s + (LETTER_VALS[l] || 0), 0);
+    fx("point");
     // Visual-only flourish; does not affect scoring or Firebase.
     setCelebrate({ word, pts });
     setTimeout(() => setCelebrate(null), 1200);

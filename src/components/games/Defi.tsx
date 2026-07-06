@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { DEFIS } from "../../lib/gameData";
 import { JokerBar } from "../JokerBar";
 import { initJokers, jokerCount, type JokerType } from "../../lib/jokers";
@@ -79,6 +80,7 @@ export function Defi({ room, roomId, playerId, isHost, onLeave }: DefiProps) {
   const addPoints = (pid: string) => {
     const doubled = jokerActiveMap[pid] === "double";
     const gain = doubled ? 20 : 10;
+    fx("point");
     const newScores = { ...(room.scores || {}), [pid]: ((room.scores || {})[pid] || 0) + gain };
     const upd: Record<string, unknown> = { scores: newScores };
     if (doubled) upd[`jokerActive/${pid}`] = null; // consommé une fois

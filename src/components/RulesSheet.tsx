@@ -61,7 +61,7 @@ export function RulesSheet({ gameId }: { gameId: GameId }) {
 }
 
 const RULES_CSS = `
-.rules-fab{position:fixed;top:.85rem;right:.85rem;z-index:40;width:34px;height:34px;border-radius:50%;
+.rules-fab{position:fixed;top:16px;right:70px;z-index:40;width:34px;height:34px;border-radius:50%;
   border:1px solid var(--border);background:var(--surface-1);color:var(--muted);
   font-family:var(--font-d);font-size:1.05rem;line-height:1;cursor:pointer;
   box-shadow:var(--shadow);display:grid;place-items:center;opacity:.85;transition:opacity .15s,transform .12s,color .15s;}

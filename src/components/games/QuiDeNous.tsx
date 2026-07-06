@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { dbRef, update } from "../../lib/firebase";
+import { fx } from "../../lib/sound";
 import { QUIDENOUS_QUESTIONS } from "../../lib/gameData";
 import type { Room } from "../../types";
 
@@ -161,6 +162,7 @@ export function QuiDeNous({ room, roomId, playerId, isHost, isSolo, onLeave, onT
 
   const castVote = (targetId: string) => {
     if (phase !== "vote") return;
+    fx("vote");
     setPendingVote(targetId);
     // Idempotent : re-voter écrase simplement le vote précédent.
     update(dbRef(`games/${roomId}`), { [`qdnVotes/${playerId}`]: targetId });

@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
+import { fx } from "../lib/sound";
 import type { Room, Player } from "../types";
 
 interface ResultScreenProps {
@@ -27,6 +29,7 @@ const BAR_CLR = ["linear-gradient(180deg,#ffe27a,#f0ab34)", "linear-gradient(180
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣"];
 
 export function ResultScreen({ room, isHost, onRestart, onHome }: ResultScreenProps) {
+  useEffect(() => { fx("victory"); }, []);
   const scores = room.scores || {};
   const allPlayers = Object.values(room.players || {});
 
