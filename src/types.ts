@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result" | "palmares";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere" | "yams";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere" | "yams" | "awale";
 
 export interface MemberPreset {
   name: string;
@@ -169,6 +169,14 @@ export interface Room {
   ymHeld?: boolean[];                   // dés conservés entre les lancers
   ymRolls?: number;                     // lancers utilisés ce tour (0-3)
   ymScores?: Record<string, Record<string, number>>; // ymScores/<pid>/<catId>
+  // Awalé (Oware, 2 joueurs, semailles)
+  awBoard?: number[];                   // 12 trous
+  awStores?: number[];                  // greniers [siège0, siège1]
+  awTurn?: 0 | 1;                       // siège dont c'est le tour
+  awOrder?: string[];                   // [idSiège0, idSiège1]
+  awMoves?: number;                     // compteur de coups (clé IA + garde-fou)
+  awLast?: number | null;              // dernier trou joué (surbrillance)
+  awGain?: number;                      // dernière capture (feedback)
   // Jokers (shared across round-based games)
   jokers?: Record<string, Record<string, number>>;  // jokers/<pid>/<type> = remaining count
   jokerActive?: Record<string, string>;              // jokerActive/<pid> = type active this round

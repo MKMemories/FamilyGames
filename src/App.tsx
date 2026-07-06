@@ -32,6 +32,7 @@ const Marque = lazy(() => import("./components/games/Marque").then(m => ({ defau
 const Memory = lazy(() => import("./components/games/Memory").then(m => ({ default: m.Memory })));
 const MotMystere = lazy(() => import("./components/games/MotMystere").then(m => ({ default: m.MotMystere })));
 const Yams = lazy(() => import("./components/games/Yams").then(m => ({ default: m.Yams })));
+const Awale = lazy(() => import("./components/games/Awale").then(m => ({ default: m.Awale })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -455,6 +456,9 @@ function App() {
           )}
           {activeGame === "yams" && (
             <Yams room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
+          )}
+          {activeGame === "awale" && (
+            <Awale room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}
           {activeGame === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />

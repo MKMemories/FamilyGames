@@ -1,9 +1,10 @@
 import type { Game, MemberPreset, GameId, Difficulty, StoredQuizQuestion } from "../types";
+import { newBoard as awNewBoard } from "./awaleData";
 
 /* ── Solo vs Ordinateur ── */
 export const AI_ID = "zzz-ai";
 export const AI_PLAYER = { id: AI_ID, name: "Ordinateur", color: "#8b93a7", emoji: "🤖" };
-export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus", "grandscrabble", "monopoly", "uno", "memory", "motmystere", "yams"]);
+export const AI_GAMES = new Set<GameId>(["morpion", "connect4", "chess", "checkers", "bataille", "petitbac", "bombe", "des", "blokus", "grandscrabble", "monopoly", "uno", "memory", "motmystere", "yams", "awale"]);
 export function gameSupportsAI(g: GameId): boolean { return AI_GAMES.has(g); }
 export const DIFFICULTIES: { id: Difficulty; label: string; emoji: string; desc: string }[] = [
   { id: "facile", label: "Facile", emoji: "🙂", desc: "L'ordinateur joue simplement" },
@@ -46,6 +47,7 @@ export const GAMES: Game[] = [
   { id: "connect4", name: "Puissance 4", emoji: "🔴", desc: "Aligne 4 jetons avant ton adversaire", min: 2, max: 2, color: "#ef4444", grad: "#f87171", cat: "duo" },
   { id: "bataille", name: "Bataille Navale", emoji: "🚢", desc: "Place ta flotte, coule celle de l'adversaire", min: 2, max: 2, color: "#3b82f6", grad: "#60a5fa", cat: "duo" },
   { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6", grad: "#a78bfa", cat: "duo" },
+  { id: "awale", name: "Awalé", emoji: "🫘", desc: "Le grand classique africain des semailles — sème et capture les graines", min: 2, max: 2, color: "#b45309", grad: "#f59e0b", cat: "duo" },
   /* ── 🧭 AVENTURE SOLO ── */
   { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8", grad: "#7dd3fc", cat: "solo" },
 ];
@@ -444,6 +446,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "memory") return { mmCards: null, mmMatched: [], mmUp: [], mmTurn: 0, mmOrder: [], mmPairs: {} };
   if (game === "motmystere") return { wmWord: null, wmRound: 0, wmTotalRounds: 6, wmGuesses: {}, wmDone: {}, wmSolved: {}, wmTimes: {}, wmRevealed: false, wmUsed: [] };
   if (game === "yams") return { ymOrder: [], ymTurn: 0, ymDice: null, ymHeld: [false, false, false, false, false], ymRolls: 0, ymScores: {} };
+  if (game === "awale") return { awBoard: awNewBoard(), awStores: [0, 0], awTurn: 0, awOrder: [], awMoves: 0, awLast: null, awGain: 0 };
   return {};
 }
 
