@@ -31,6 +31,7 @@ export interface MonoState {
   log: string[];
   card: string | null;              // dernière carte tirée (pour affichage)
   winner: string | null;
+  seq: number;                      // compteur monotone (déclenche l'IA à chaque transition)
 }
 
 const clone = (s: MonoState): MonoState => ({
@@ -39,6 +40,7 @@ const clone = (s: MonoState): MonoState => ({
   owners: { ...s.owners }, houses: { ...s.houses },
   dice: [s.dice[0], s.dice[1]], chanceDeck: [...s.chanceDeck], chestDeck: [...s.chestDeck],
   log: [...s.log], order: [...s.order],
+  seq: (s.seq || 0) + 1,
 });
 const shuffle = (n: number, rnd: () => number) => {
   const a = Array.from({ length: n }, (_, i) => i);
@@ -56,7 +58,7 @@ export function initMono(order: string[], rnd: () => number): MonoState {
     dice: [1, 1], doubles: 0, rolledDoubles: false, phase: "roll", pendingBuy: null,
     chanceDeck: shuffle(CHANCE.length, rnd), chancePtr: 0,
     chestDeck: shuffle(CHEST.length, rnd), chestPtr: 0,
-    log: ["La partie commence !"], card: null, winner: null,
+    log: ["La partie commence !"], card: null, winner: null, seq: 0,
   };
 }
 

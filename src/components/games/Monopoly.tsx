@@ -106,9 +106,13 @@ export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   /* ── IA (solo) : joue le tour complet du bot. ── */
   const aiId = room.aiId;
   const aiActive = !!aiId && !!mono && mono.phase !== "over" && cur === aiId && isHost;
-  useSoloAI(aiActive, `${mono?.turn}-${mono?.phase}`, () => {
+  // Clé = compteur monotone : « turn » est un INDEX de joueur qui se répète à
+  // chaque tour ; sans seq, la clé de l'IA était identique d'un tour à l'autre
+  // et le hook ne rejouait jamais (blocage au 2ᵉ tour de l'ordinateur).
+  useSoloAI(aiActive, `${mono?.seq ?? 0}`, () => {
     if (!mono || !aiId) return;
-    write(aiTurn(mono, Math.random));
+    try { write(aiTurn(mono, Math.random)); }
+    catch { write(endTurn(mono)); }
   }, 900);
 
   /* ── Écran de démarrage ── */
