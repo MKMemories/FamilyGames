@@ -28,6 +28,22 @@ function Die({ v, rolling, dir }: { v: number; rolling: boolean; dir: number }) 
   );
 }
 
+/* Carte « Titre de propriété » présentée au moment de l'achat. */
+function TitleDeed({ sp }: { sp: Space }) {
+  const band = sp.color || (sp.type === "rail" ? "#2b2f3a" : sp.type === "util" ? "#8b93a7" : "#6b7280");
+  return (
+    <motion.div className="mono-deed" initial={{ scale: 0.7, y: 12, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+      <div className="mono-deed-band" style={{ background: band }}>TITRE DE PROPRIÉTÉ</div>
+      <div className="mono-deed-name">{sp.type === "rail" ? "🚉 " : sp.type === "util" ? "💡 " : ""}{sp.name}</div>
+      <div className="mono-deed-price">{sp.price} €</div>
+      {sp.rent
+        ? <div className="mono-deed-rent">Loyer de base <b>{sp.rent[0]} €</b> · Maison {sp.house} €</div>
+        : sp.type === "rail" ? <div className="mono-deed-rent">Loyer selon le nombre de gares</div>
+        : <div className="mono-deed-rent">Loyer = dés × 4 ou × 10</div>}
+    </motion.div>
+  );
+}
+
 /* index de case → cellule (ligne, colonne) sur une grille 11×11 (bord). */
 function cellPos(i: number): [number, number] {
   if (i === 0) return [10, 10];
@@ -158,8 +174,11 @@ export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
                 <span className="mono-cname">{sp.type === "go" ? "🏁" : sp.type === "jail" ? "🔒" : sp.type === "gotojail" ? "🚔" : sp.type === "parking" ? "🅿️" : sp.type === "chance" ? "❓" : sp.type === "chest" ? "🎁" : sp.type === "tax" ? "💸" : sp.type === "rail" ? "🚉" : sp.type === "util" ? "💡" : sp.short}</span>
                 {owner && <span className="mono-owner" style={{ background: (room.players || {})[owner]?.color || "#999" }} />}
                 {h > 0 && <span className="mono-houses">{h === MAX_HOUSES ? "🏨" : "🏠".repeat(h)}</span>}
-                {here.length > 0 && <span className="mono-tokens">{here.map(id => (
-                  <motion.span key={id} initial={{ scale: 0, y: -7 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 520, damping: 15 }}>{tokenOf(id)}</motion.span>
+                {here.length > 0 && <span className="mono-pawns">{here.map(id => (
+                  <motion.span key={id} className="mono-pawn" style={{ background: (room.players || {})[id]?.color || "#888" }}
+                    initial={{ scale: 0, y: -9 }} animate={{ scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 520, damping: 14 }}>
+                    {tokenOf(id)}
+                  </motion.span>
                 ))}</span>}
               </div>
             );
@@ -170,19 +189,27 @@ export function Monopoly({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
             <div className="mono-center-deco" aria-hidden>
               <span className="mono-center-glow" />
               <span className="mono-logo-diamond"><span>MONOPOLY</span><small>KHELIJ</small></span>
+              <span className="mono-deck chance"><i>❓</i><span>Chance</span></span>
+              <span className="mono-deck chest"><i>🎁</i><span>Caisse</span></span>
+              <span className="mono-euro e1">€</span><span className="mono-euro e2">€</span>
             </div>
             <div className="mono-dice">
               <Die v={mono.dice[0] || 1} rolling={rolling} dir={1} />
               <Die v={mono.dice[1] || 1} rolling={rolling} dir={-1} />
             </div>
-            {mono.card && <div className="mono-card">🃏 {mono.card}</div>}
+            {mono.card && (
+              <motion.div className="mono-drawncard" key={mono.card} initial={{ rotateY: 90, opacity: 0, y: 6 }} animate={{ rotateY: 0, opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+                <span className="mono-dc-head">🎴 Carte</span>
+                <span className="mono-dc-text">{mono.card}</span>
+              </motion.div>
+            )}
             {!over && (
-              <div className="mono-prompt">
-                {mono.phase === "buy" && mono.pendingBuy != null
-                  ? <b>{BOARD[mono.pendingBuy].short} — {BOARD[mono.pendingBuy].price} €</b>
-                  : isMyTurn ? <b>{mono.players[playerId].jail >= 0 && mono.phase === "roll" ? "🔒 En prison" : curSpace.short}</b>
-                  : <span className="mono-muted">{nameOf(cur)} joue…</span>}
-              </div>
+              mono.phase === "buy" && mono.pendingBuy != null
+                ? <TitleDeed sp={BOARD[mono.pendingBuy]} />
+                : <div className="mono-prompt">
+                    {isMyTurn ? <b>{mono.players[playerId].jail >= 0 && mono.phase === "roll" ? "🔒 En prison" : curSpace.short}</b>
+                              : <span className="mono-muted">{nameOf(cur)} joue…</span>}
+                  </div>
             )}
             {over && <div className="mono-prompt mono-win">🏆 {nameOf(mono.winner || mono.order[0])} gagne !</div>}
 
@@ -249,7 +276,9 @@ const MONO_CSS = `
 .mono-cname{margin-top:18%;font-weight:700;line-height:1;overflow:hidden;}
 .mono-owner{position:absolute;bottom:1px;left:1px;width:6px;height:6px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.7),0 1px 2px rgba(0,0,0,.3);}
 .mono-houses{position:absolute;top:22%;left:0;right:0;font-size:.5em;line-height:1;}
-.mono-tokens{position:absolute;bottom:0;right:0;display:flex;flex-wrap:wrap;justify-content:flex-end;font-size:clamp(.5rem,2vw,.85rem);line-height:.9;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35));}
+.mono-pawns{position:absolute;bottom:1px;left:0;right:0;display:flex;justify-content:center;align-items:flex-end;z-index:4;pointer-events:none;}
+.mono-pawn{width:clamp(13px,4.6vw,18px);height:clamp(13px,4.6vw,18px);border-radius:50%;display:grid;place-items:center;
+  font-size:clamp(8px,3vw,11px);line-height:1;border:1.5px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.5);margin:0 -3px;}
 
 .mono-center{grid-row:2 / 11;grid-column:2 / 11;position:relative;overflow:hidden;border-radius:12px;
   background:radial-gradient(130% 110% at 50% 0%, color-mix(in srgb,var(--accent) 12%, var(--surface-1)), var(--surface-1));
@@ -270,6 +299,32 @@ const MONO_CSS = `
   box-shadow:0 6px 14px rgba(0,0,0,.32),inset 0 2px 3px rgba(255,255,255,.95),inset 0 -3px 6px rgba(0,0,0,.14);}
 .mono-pip{border-radius:50%;}
 .mono-pip.on{background:radial-gradient(circle at 35% 32%,#464b59,#0f1119);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),0 1px 1px rgba(0,0,0,.2);}
+
+/* Decks décoratifs Chance / Caisse dans le tapis */
+.mono-deck{position:absolute;display:flex;flex-direction:column;align-items:center;gap:0;padding:.32rem .5rem;border-radius:8px;
+  background:linear-gradient(160deg,#ffffff,#eef1fb);box-shadow:0 4px 10px rgba(0,0,0,.22);opacity:.92;}
+.mono-deck i{font-size:1.15rem;font-style:normal;line-height:1;}
+.mono-deck span{font-family:var(--font-d);font-size:.48rem;color:#5a5f72;letter-spacing:.03em;}
+.mono-deck::before,.mono-deck::after{content:'';position:absolute;inset:0;border-radius:8px;background:linear-gradient(160deg,#f4f6ff,#dfe4f4);z-index:-1;}
+.mono-deck::before{transform:translate(2.5px,2.5px);} .mono-deck::after{transform:translate(5px,5px);opacity:.8;}
+.mono-deck.chance{top:11%;right:9%;transform:rotate(7deg);}
+.mono-deck.chest{bottom:13%;left:9%;transform:rotate(-7deg);}
+.mono-euro{position:absolute;font-family:var(--font-d);color:color-mix(in srgb,var(--green) 60%, transparent);opacity:.14;font-size:2.2rem;}
+.mono-euro.e1{top:14%;left:14%;transform:rotate(-12deg);} .mono-euro.e2{bottom:16%;right:13%;transform:rotate(10deg);}
+
+/* Carte tirée (Chance / Caisse) */
+.mono-drawncard{display:flex;flex-direction:column;align-items:center;gap:.1rem;max-width:88%;padding:.4rem .75rem;border-radius:10px;
+  background:linear-gradient(160deg,#fffef4,#fff2d2);border:1.5px solid #f0d48a;box-shadow:0 8px 18px rgba(120,90,0,.25);transform-style:preserve-3d;}
+.mono-dc-head{font-family:var(--font-d);font-size:.64rem;color:#b8860b;letter-spacing:.05em;}
+.mono-dc-text{font-size:.74rem;font-weight:800;color:#3a2f10;line-height:1.2;text-align:center;}
+
+/* Carte « Titre de propriété » à l'achat */
+.mono-deed{width:min(74%,196px);background:#fff;border-radius:9px;overflow:hidden;border:1px solid rgba(0,0,0,.12);box-shadow:0 10px 24px rgba(0,0,0,.3);}
+.mono-deed-band{color:#fff;font-family:var(--font-d);font-size:.58rem;letter-spacing:.06em;padding:.35rem;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.35);}
+.mono-deed-name{font-weight:900;color:#1c2333;font-size:.92rem;text-align:center;padding:.3rem .3rem 0;line-height:1.05;}
+.mono-deed-price{font-family:var(--font-d);color:#189a5b;font-size:1.05rem;text-align:center;padding:.05rem 0 .1rem;}
+.mono-deed-rent{font-size:.6rem;color:#5a6274;text-align:center;padding:0 .35rem .4rem;line-height:1.3;}
+.mono-deed-rent b{color:#1c2333;}
 .mono-card{font-size:.72rem;color:var(--muted);max-width:90%;line-height:1.2;background:var(--surface-2,rgba(0,0,0,.04));padding:.3rem .5rem;border-radius:8px;}
 .mono-prompt{font-size:.9rem;font-weight:800;color:var(--text);}
 .mono-prompt.mono-win{font-family:var(--font-d);color:var(--accent);font-size:1.05rem;}
