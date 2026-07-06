@@ -1735,6 +1735,13 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
 .av-swatch.on { outline: 3px solid var(--accent); outline-offset: 2px; }
 .av-check { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-weight: 900; font-size: 1.1rem; text-shadow: 0 1px 3px rgba(0,0,0,.55); }
 
+.av-controls { display: flex; gap: .5rem; justify-content: center; margin: .2rem 0 .1rem; }
+.av-ctrl { flex: 1; max-width: 130px; padding: .5rem .6rem; border-radius: 999px; font-weight: 800; font-size: .8rem;
+  background: var(--surface-1); border: 1.5px solid var(--border); color: var(--text); box-shadow: var(--shadow); }
+.av-ctrl:disabled { opacity: .4; }
+.av-ctrl.surprise { background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, var(--surface-1)), color-mix(in srgb, var(--accent) 18%, var(--surface-1))); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.av-dice:disabled { opacity: .4; }
+
 .av-save-bar { position: sticky; bottom: 0; padding: .6rem 0 .3rem; background: linear-gradient(0deg, var(--bg) 62%, transparent); }
 
 /* Presets d'accueil basés sur l'avatar */

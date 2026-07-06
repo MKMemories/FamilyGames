@@ -31,31 +31,45 @@ const TABS: Tab[] = [
 ];
 
 export function AvatarStudio({ initial, name, onSave, onClose }: Props) {
-  const [a, setA] = useState<AvatarT>(initial);
   const [tab, setTab] = useState<keyof AvatarT>("hair");
-  const [bounce, setBounce] = useState(0);
+  // Historique complet → « annuler / refaire » chaque changement.
+  const [history, setHistory] = useState<AvatarT[]>([initial]);
+  const [ptr, setPtr] = useState(0);
+  const a = history[ptr];
 
   const active = TABS.find(t => t.key === tab)!;
-  const set = (patch: Partial<AvatarT>) => { fx("tap"); setA(p => ({ ...p, ...patch })); setBounce(b => b + 1); };
-  const applyPack = (patch: Partial<AvatarT>) => { fx("select"); setA(p => ({ ...p, ...patch })); setBounce(b => b + 1); };
-  const surprise = () => { fx("point"); setA(randomAvatar()); setBounce(b => b + 1); };
+  const commit = (next: AvatarT) => { setHistory(h => [...h.slice(0, ptr + 1), next]); setPtr(p => p + 1); };
+  const set = (patch: Partial<AvatarT>) => { fx("tap"); commit({ ...a, ...patch }); };
+  const applyPack = (patch: Partial<AvatarT>) => { fx("select"); commit({ ...a, ...patch }); };
+  const surprise = () => { fx("point"); commit(randomAvatar()); };
+  const canUndo = ptr > 0, canRedo = ptr < history.length - 1;
+  const undo = () => { if (canUndo) { fx("swap"); setPtr(p => p - 1); } };
+  const redo = () => { if (canRedo) { fx("swap"); setPtr(p => p + 1); } };
+  const reset = () => { if (ptr !== 0 || history.length > 1) { fx("swap"); commit(initial); } };
 
   return (
     <div className="screen avstudio">
       <div className="game-topbar avstudio-bar">
         <button className="btn-back" onClick={onClose}>✕</button>
         <div className="turn-indicator">🎭 Mon avatar</div>
-        <button className="av-dice" onClick={surprise} title="Surprise">🎲</button>
+        <button className="av-dice" onClick={reset} title="Tout réinitialiser" disabled={!canUndo && !canRedo}>⟲</button>
       </div>
 
       {/* Scène de prévisualisation */}
       <div className="av-stage">
         <div className="av-halo" />
-        <motion.div key={bounce} initial={{ scale: 0.9, rotate: -3 }} animate={{ scale: 1, rotate: 0 }}
+        <motion.div key={ptr} initial={{ scale: 0.9, rotate: -3 }} animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 320, damping: 18 }} className="av-preview-wrap">
           <Avatar a={a} size={168} />
         </motion.div>
         <div className="av-name">{name || "Toi"}</div>
+      </div>
+
+      {/* Annuler / Surprise / Refaire */}
+      <div className="av-controls">
+        <button className="av-ctrl" onClick={undo} disabled={!canUndo}>↩ Annuler</button>
+        <button className="av-ctrl surprise" onClick={surprise}>🎲 Surprise</button>
+        <button className="av-ctrl" onClick={redo} disabled={!canRedo}>Refaire ↪</button>
       </div>
 
       {/* Packs à la mode */}

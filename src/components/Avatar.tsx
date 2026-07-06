@@ -9,73 +9,109 @@ interface Props { a: AvatarT; size?: number; ring?: string; className?: string; 
 
 let uidc = 0;
 
+/* Contour de tête réutilisé (visage + masque de lumière). */
+const FACE_D = "M50 20.5 C 62.5 20.5 71 29 71 41.5 C 71 53 63.5 64.5 50 66 C 36.5 64.5 29 53 29 41.5 C 29 29 37.5 20.5 50 20.5 Z";
+
 export function Avatar({ a, size = 72, ring, className, flat }: Props) {
   const id = useMemo(() => `av${(uidc = (uidc + 1) % 1e6)}`, []);
   const skin = SKINS[a.skin] || SKINS[1];
-  const skinD = shade(skin, -18);       // ombre peau
+  const skinD = shade(skin, -16);       // ombre peau
+  const skinDD = shade(skin, -30);      // ombre profonde (cou)
   const bg = BGS[a.bg] || BGS[0];
   const hairC = HAIR_COLORS[a.hairColor] || HAIR_COLORS[0];
-  const hairD = shade(hairC, -22);
+  const hairD = shade(hairC, -26);
+  const hairUrl = `url(#${id}hair)`;
   const outC = OUTFIT_COLORS[a.outfit % OUTFIT_COLORS.length];
 
   return (
     <svg viewBox="0 0 100 100" width={size} height={size} className={className}
       style={{ borderRadius: "50%", boxShadow: ring ? `0 0 0 3px ${ring}` : undefined, display: "block" }}>
       <defs>
-        <radialGradient id={`${id}bg`} cx="50%" cy="34%" r="80%">
-          <stop offset="0%" stopColor={bg.from} />
+        <radialGradient id={`${id}bg`} cx="50%" cy="30%" r="85%">
+          <stop offset="0%" stopColor={tint(bg.from, 10)} />
+          <stop offset="60%" stopColor={bg.from} />
           <stop offset="100%" stopColor={bg.to} />
         </radialGradient>
-        <linearGradient id={`${id}sk`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={tint(skin, 8)} />
-          <stop offset="100%" stopColor={skin} />
+        {/* Peau : lumière en haut à gauche → ombre en bas à droite */}
+        <linearGradient id={`${id}sk`} x1="0.25" y1="0.05" x2="0.8" y2="1">
+          <stop offset="0%" stopColor={tint(skin, 16)} />
+          <stop offset="55%" stopColor={skin} />
+          <stop offset="100%" stopColor={shade(skin, -10)} />
+        </linearGradient>
+        {/* Modelé du visage (ombres latérales douces) */}
+        <radialGradient id={`${id}face`} cx="50%" cy="42%" r="58%">
+          <stop offset="60%" stopColor={skin} stopOpacity="0" />
+          <stop offset="100%" stopColor={shade(skin, -22)} stopOpacity="0.55" />
+        </radialGradient>
+        <linearGradient id={`${id}hair`} x1="0.3" y1="0" x2="0.7" y2="1">
+          <stop offset="0%" stopColor={tint(hairC, 30)} />
+          <stop offset="45%" stopColor={hairC} />
+          <stop offset="100%" stopColor={hairD} />
+        </linearGradient>
+        <radialGradient id={`${id}iris`} cx="42%" cy="36%" r="65%">
+          <stop offset="0%" stopColor={tint(irisFor(a), 34)} />
+          <stop offset="55%" stopColor={irisFor(a)} />
+          <stop offset="100%" stopColor={shade(irisFor(a), -45)} />
+        </radialGradient>
+        <linearGradient id={`${id}lip`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#c85f6d" />
+          <stop offset="100%" stopColor="#e08f9a" />
         </linearGradient>
         <clipPath id={`${id}clip`}><circle cx="50" cy="50" r="50" /></clipPath>
+        <clipPath id={`${id}faceclip`}><path d={FACE_D} /></clipPath>
       </defs>
 
       <g clipPath={`url(#${id}clip)`}>
         <rect x="0" y="0" width="100" height="100" fill={`url(#${id}bg)`} />
-        {!flat && <circle cx="50" cy="30" r="42" fill="#fff" opacity="0.10" />}
+        {!flat && <ellipse cx="50" cy="22" rx="48" ry="34" fill="#fff" opacity="0.13" />}
 
-        {/* Cheveux arrière (long / afro / voile) */}
-        <BackHair a={a} c={hairC} cd={hairD} />
+        {/* Cheveux arrière */}
+        <BackHair a={a} c={hairUrl} cd={hairD} />
 
         {/* Corps + tenue */}
         <Outfit a={a} c={outC} skin={skin} skinD={skinD} id={id} />
 
-        {/* Cou */}
-        <path d="M43 55 h14 v10 q-7 4 -14 0 z" fill={skinD} />
+        {/* Cou + ombre sous le menton */}
+        <path d="M43 54 h14 v11 q-7 4 -14 0 z" fill={skin} />
+        <path d="M43 54 h14 v4 q-7 5 -14 0 z" fill={skinDD} opacity=".55" />
+
+        {/* Oreilles */}
+        <ellipse cx="29.5" cy="44.5" rx="4.3" ry="5.4" fill={`url(#${id}sk)`} />
+        <ellipse cx="70.5" cy="44.5" rx="4.3" ry="5.4" fill={`url(#${id}sk)`} />
+        <path d="M28.5 42.5 q2 2.5 1 5" stroke={skinD} strokeWidth="1" fill="none" strokeLinecap="round" opacity=".6" />
+        <path d="M71.5 42.5 q-2 2.5 -1 5" stroke={skinD} strokeWidth="1" fill="none" strokeLinecap="round" opacity=".6" />
 
         {/* Tête */}
-        <ellipse cx="50" cy="43" rx="20.5" ry="22" fill={`url(#${id}sk)`} />
-        <ellipse cx="29.5" cy="45" rx="4.2" ry="5" fill={skin} />
-        <ellipse cx="70.5" cy="45" rx="4.2" ry="5" fill={skin} />
+        <path d={FACE_D} fill={`url(#${id}sk)`} />
+        <path d={FACE_D} fill={`url(#${id}face)`} />
+
         {/* Joues */}
-        <ellipse cx="37" cy="50" rx="4.5" ry="3" fill="#ff5b93" opacity="0.20" />
-        <ellipse cx="63" cy="50" rx="4.5" ry="3" fill="#ff5b93" opacity="0.20" />
+        <ellipse cx="37.5" cy="50" rx="4.8" ry="3.1" fill="#ff5b7e" opacity="0.22" />
+        <ellipse cx="62.5" cy="50" rx="4.8" ry="3.1" fill="#ff5b7e" opacity="0.22" />
 
-        {/* Pilosité (barbe / bouc) sous le visage */}
-        <Facial a={a} c={hairC} />
+        {/* Pilosité (barbe / bouc) */}
+        <Facial a={a} c={hairD} id={id} />
 
-        {/* Traits du visage */}
-        <Eyes a={a} />
-        {/* Nez */}
-        <path d="M49 46 q1.2 3 0 4.4" fill="none" stroke={skinD} strokeWidth="1.1" strokeLinecap="round" opacity=".55" />
-        <Mouth a={a} />
-        {/* Moustache par-dessus la bouche */}
-        <Mustache a={a} c={hairC} />
+        {/* Sourcils + yeux + nez + bouche */}
+        <Brows a={a} c={hairD} />
+        <Eyes a={a} id={id} />
+        <path d="M48.4 45.5 q-1.6 4 1.6 5.4 q3.2 -1.4 1.6 -5.4" fill="none" stroke={shade(skin, -18)} strokeWidth="1" strokeLinecap="round" opacity=".5" />
+        <Mouth a={a} id={id} />
+        <Mustache a={a} c={hairD} />
 
-        {/* Cheveux avant */}
-        <FrontHair a={a} c={hairC} cd={hairD} />
+        {/* Cheveux avant + reflet */}
+        <FrontHair a={a} c={hairUrl} cd={hairD} />
 
         {/* Accessoire au premier plan */}
         <Accessory a={a} id={id} />
-
-        <rect x="0" y="0" width="100" height="100" fill="none" />
       </g>
     </svg>
   );
 }
+
+/* Couleur d'iris déterministe (variété douce selon le fond choisi). */
+const IRISES = ["#6b4a2b", "#3a2a1a", "#3f6d8c", "#5b7a4a", "#7a5a3a", "#4d4a63", "#2f6d6d"];
+function irisFor(a: AvatarT): string { return IRISES[a.bg % IRISES.length] || "#6b4a2b"; }
 
 /* ───────────────────────── COIFFURES ───────────────────────── */
 function BackHair({ a, c, cd }: { a: AvatarT; c: string; cd: string }) {
@@ -146,32 +182,46 @@ function FrontHair({ a, c, cd }: { a: AvatarT; c: string; cd: string }) {
   void cd;
 }
 
+/* ───────────────────────── SOURCILS ───────────────────────── */
+function Brows({ a, c }: { a: AvatarT; c: string }) {
+  if (a.eyes === 3) return null;
+  const raise = a.eyes === 5 ? -1.4 : 0; // surpris : sourcils levés
+  const b = (x: number) => <path d={`M${x - 5} ${36.2 + raise} Q${x} ${33 + raise} ${x + 5} ${35.8 + raise} Q${x} ${34.8 + raise} ${x - 5} ${36.2 + raise} Z`} fill={c} />;
+  return <g opacity=".92">{b(41.5)}{b(58.5)}</g>;
+}
+
 /* ───────────────────────── YEUX ───────────────────────── */
-function Eyes({ a }: { a: AvatarT }) {
-  const L = 41.5, R = 58.5, y = 42;
-  const brow = (x: number) => <path d={`M${x - 4} 35.5 q4 -2 8 0`} stroke="#3a2f2a" strokeWidth="1.4" fill="none" strokeLinecap="round" opacity=".55" />;
+const L = 41.5, R = 58.5, EY = 42;
+function eyeOpen(ex: number, ey: number, id: string, big = false) {
+  const rw = big ? 4.2 : 3.7, rh = big ? 3.4 : 2.9, ir = big ? 2.5 : 2.2;
+  return <g key={ex}>
+    <path d={`M${ex - rw} ${ey} Q${ex} ${ey - rh} ${ex + rw} ${ey} Q${ex} ${ey + rh * 0.88} ${ex - rw} ${ey} Z`} fill="#fdf7f2" />
+    <circle cx={ex} cy={ey} r={ir} fill={`url(#${id}iris)`} />
+    <circle cx={ex} cy={ey} r={ir * 0.46} fill="#160d06" />
+    <circle cx={ex - ir * 0.4} cy={ey - ir * 0.42} r={ir * 0.32} fill="#fff" opacity=".95" />
+    <circle cx={ex + ir * 0.45} cy={ey + ir * 0.5} r={ir * 0.16} fill="#fff" opacity=".55" />
+    <path d={`M${ex - rw} ${ey - 0.2} Q${ex} ${ey - rh} ${ex + rw} ${ey - 0.2}`} stroke="#3a2a26" strokeWidth="1.05" fill="none" strokeLinecap="round" />
+  </g>;
+}
+function Eyes({ a, id }: { a: AvatarT; id: string }) {
   switch (a.eyes) {
-    case 1: // Joyeux (arcs)
-      return <g stroke="#2b2530" strokeWidth="2.4" fill="none" strokeLinecap="round">
-        <path d={`M${L - 4} ${y + 1} q4 -5 8 0`} /><path d={`M${R - 4} ${y + 1} q4 -5 8 0`} /></g>;
+    case 1: // Joyeux (arcs souriants)
+      return <g stroke="#2b2530" strokeWidth="2.3" fill="none" strokeLinecap="round">
+        <path d={`M${L - 3.8} ${EY + 1.2} q3.8 -5 7.6 0`} /><path d={`M${R - 3.8} ${EY + 1.2} q3.8 -5 7.6 0`} /></g>;
     case 2: // Clin d'œil
-      return <g>{brow(L)}{brow(R)}
-        <circle cx={L} cy={y} r="3.2" fill="#2b2530" /><circle cx={L + 1} cy={y - 1} r="1" fill="#fff" />
-        <path d={`M${R - 4} ${y} q4 -4 8 0`} stroke="#2b2530" strokeWidth="2.4" fill="none" strokeLinecap="round" /></g>;
+      return <g>{eyeOpen(L, EY, id)}
+        <path d={`M${R - 4} ${EY} q4 -4.5 8 0`} stroke="#2b2530" strokeWidth="2.3" fill="none" strokeLinecap="round" /></g>;
     case 3: // Étoilé
-      return <g fill="#2b2530">{star(L, y)}{star(R, y)}</g>;
-    case 4: // Endormi
-      return <g stroke="#2b2530" strokeWidth="2.2" fill="none" strokeLinecap="round">
-        <path d={`M${L - 4} ${y} h8`} /><path d={`M${R - 4} ${y} h8`} /></g>;
-    case 5: // Surpris (grands)
-      return <g>{brow(L)}{brow(R)}
-        <circle cx={L} cy={y} r="4.4" fill="#fff" stroke="#c9b8a0" strokeWidth=".5" /><circle cx={R} cy={y} r="4.4" fill="#fff" stroke="#c9b8a0" strokeWidth=".5" />
-        <circle cx={L} cy={y} r="2.4" fill="#2b2530" /><circle cx={R} cy={y} r="2.4" fill="#2b2530" /></g>;
+      return <g fill="#ffd23f" stroke="#e0a800" strokeWidth=".4">{star(L, EY)}{star(R, EY)}</g>;
+    case 4: // Endormi (mi-clos)
+      return <g>
+        <g clipPath="none">{eyeOpen(L, EY + 0.6, id)}{eyeOpen(R, EY + 0.6, id)}</g>
+        <path d={`M${L - 4.2} ${EY - 0.4} q4.2 2 8.4 0`} stroke="#3a2a26" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+        <path d={`M${R - 4.2} ${EY - 0.4} q4.2 2 8.4 0`} stroke="#3a2a26" strokeWidth="2.6" fill="none" strokeLinecap="round" /></g>;
+    case 5: // Surpris (grands yeux)
+      return <g>{eyeOpen(L, EY, id, true)}{eyeOpen(R, EY, id, true)}</g>;
     default: // Normal
-      return <g>{brow(L)}{brow(R)}
-        <ellipse cx={L} cy={y} rx="3" ry="3.6" fill="#fff" /><ellipse cx={R} cy={y} rx="3" ry="3.6" fill="#fff" />
-        <circle cx={L} cy={y + 0.4} r="2" fill="#2b2530" /><circle cx={R} cy={y + 0.4} r="2" fill="#2b2530" />
-        <circle cx={L + 0.8} cy={y - 0.6} r=".7" fill="#fff" /><circle cx={R + 0.8} cy={y - 0.6} r=".7" fill="#fff" /></g>;
+      return <g>{eyeOpen(L, EY, id)}{eyeOpen(R, EY, id)}</g>;
   }
 }
 function star(x: number, y: number) {
@@ -184,31 +234,43 @@ function star(x: number, y: number) {
   return <polygon points={pts.join(" ")} />;
 }
 
-/* ───────────────────────── BOUCHE ───────────────────────── */
-function Mouth({ a }: { a: AvatarT }) {
-  const y = 53;
+/* ───────────────────────── BOUCHE (lèvres) ───────────────────────── */
+function Mouth({ a, id }: { a: AvatarT; id: string }) {
+  const y = 53, lip = `url(#${id}lip)`;
   switch (a.mouth) {
-    case 1: // Rire
-      return <path d={`M43 ${y} q7 9 14 0 q-7 3 -14 0 z`} fill="#b0304a" stroke="#8f2038" strokeWidth=".6" />;
+    case 1: // Rire (dents visibles)
+      return <g>
+        <path d={`M43.5 ${y - 0.5} q6.5 8.5 13 0 q-6.5 3 -13 0 z`} fill="#7a1f30" />
+        <path d={`M44.5 ${y} q5.5 2 11 0 q-5.5 3.5 -11 0 z`} fill="#fff" />
+        <path d={`M43.5 ${y - 0.5} q6.5 5 13 0`} fill="none" stroke="#8f2038" strokeWidth=".7" />
+        <ellipse cx="50" cy={y + 3.6} rx="3" ry="1.6" fill="#e06a80" opacity=".8" /></g>;
     case 2: // Neutre
-      return <path d={`M45 ${y + 1} h10`} stroke="#8f2038" strokeWidth="1.8" fill="none" strokeLinecap="round" />;
-    case 3: // Étonné
-      return <ellipse cx="50" cy={y + 1} rx="3" ry="3.6" fill="#b0304a" />;
-    case 4: // Malicieux
-      return <path d={`M44 ${y} q6 5 12 -1`} stroke="#8f2038" strokeWidth="1.8" fill="none" strokeLinecap="round" />;
-    case 5: // Langue
-      return <g><path d={`M44 ${y} q6 6 12 0 z`} fill="#b0304a" /><ellipse cx="50" cy={y + 3} rx="2.6" ry="2" fill="#ff7597" /></g>;
-    default: // Sourire
-      return <path d={`M44 ${y} q6 6 12 0`} stroke="#8f2038" strokeWidth="1.9" fill="none" strokeLinecap="round" />;
+      return <path d={`M45 ${y + 1} q5 1.5 10 0`} stroke="#a84a58" strokeWidth="1.8" fill="none" strokeLinecap="round" />;
+    case 3: // Étonné (petit rond)
+      return <g><ellipse cx="50" cy={y + 1} rx="2.8" ry="3.4" fill="#7a1f30" /><ellipse cx="50" cy={y + 0.4} rx="2.4" ry="2.4" fill={lip} /></g>;
+    case 4: // Malicieux (sourire en coin)
+      return <g>
+        <path d={`M44 ${y} q6 1 8 -0.5 q2 -0.5 4 -1.5`} stroke="#a84a58" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+        <path d={`M45 ${y + 0.6} q5 3 11 -1.5`} stroke="#e08f9a" strokeWidth="1" fill="none" strokeLinecap="round" opacity=".6" /></g>;
+    case 5: // Tire la langue
+      return <g>
+        <path d={`M44 ${y} q6 3 12 0 q-2 2 -6 2 q-4 0 -6 -2 z`} fill="#7a1f30" />
+        <path d={`M46.5 ${y + 1.5} q3.5 5 7 0 q-1 3.5 -3.5 3.5 q-2.5 0 -3.5 -3.5 z`} fill="#ff8098" />
+        <path d={`M50 ${y + 2} v3`} stroke="#e0607a" strokeWidth=".6" /></g>;
+    default: // Sourire (lèvres pleines)
+      return <g>
+        <path d={`M43.5 ${y - 0.3} q6.5 2 13 0 q-6.5 6.5 -13 0 z`} fill={lip} />
+        <path d={`M43.5 ${y - 0.3} q6.5 2 13 0`} fill="none" stroke="#b25563" strokeWidth=".7" />
+        <path d={`M46 ${y + 2.4} q4 1.6 8 0`} stroke="#fff" strokeWidth="1.1" fill="none" strokeLinecap="round" opacity=".5" /></g>;
   }
 }
 
 /* ───────────────────────── PILOSITÉ ───────────────────────── */
-function Facial({ a, c }: { a: AvatarT; c: string }) {
+function Facial({ a, c }: { a: AvatarT; c: string; id?: string }) {
   if (a.facial === 1) // Barbe
-    return <path d="M30 44 q0 22 20 22 q20 0 20 -22 q-4 14 -20 14 q-16 0 -20 -14 z" fill={c} opacity=".92" />;
+    return <path d="M29.5 43 q0 23 20.5 23 q20.5 0 20.5 -23 q-4.5 15 -20.5 15 q-16 0 -20.5 -15 z" fill={c} opacity=".95" />;
   if (a.facial === 3) // Bouc
-    return <path d="M43 56 q7 6 14 0 q-1 8 -7 8 q-6 0 -7 -8 z" fill={c} />;
+    return <path d="M43 56 q7 6 14 0 q-1 8.5 -7 8.5 q-6 0 -7 -8.5 z" fill={c} />;
   return null;
 }
 function Mustache({ a, c }: { a: AvatarT; c: string }) {
