@@ -37,6 +37,8 @@ const Awale = lazy(() => import("./components/games/Awale").then(m => ({ default
 const Sudoku = lazy(() => import("./components/games/Sudoku").then(m => ({ default: m.Sudoku })));
 const MotsFleches = lazy(() => import("./components/games/MotsFleches").then(m => ({ default: m.MotsFleches })));
 const Tetris = lazy(() => import("./components/games/Tetris").then(m => ({ default: m.Tetris })));
+const Game2048 = lazy(() => import("./components/games/Game2048").then(m => ({ default: m.Game2048 })));
+const MotsMeles = lazy(() => import("./components/games/MotsMeles").then(m => ({ default: m.MotsMeles })));
 import { Toast } from "./components/Toast";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { SoundToggle } from "./components/SoundToggle";
@@ -468,6 +470,8 @@ function App() {
           {activeGame === "sudoku" && <Sudoku onLeave={leaveRoom} />}
           {activeGame === "motsfleches" && <MotsFleches onLeave={leaveRoom} />}
           {activeGame === "tetris" && <Tetris onLeave={leaveRoom} />}
+          {activeGame === "2048" && <Game2048 onLeave={leaveRoom} />}
+          {activeGame === "motsmeles" && <MotsMeles onLeave={leaveRoom} />}
           {activeGame === "dessin" && (
             <Dessin room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} />
           )}

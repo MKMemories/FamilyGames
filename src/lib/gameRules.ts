@@ -104,6 +104,28 @@ export const GAME_RULES: Partial<Record<GameId, GameRule>> = {
       "« Vérifier » ✅ marque les lettres fausses en rouge · « Révéler » 💡 complète le mot sélectionné.",
     ],
   },
+  "2048": {
+    title: "2048",
+    emoji: "🔢",
+    lines: [
+      "But : fusionner les tuiles pour atteindre la tuile 2048 (puis continuer pour battre ton record).",
+      "Glisse (ou flèches ⬆⬇⬅➡) : TOUTES les tuiles filent dans cette direction.",
+      "Deux tuiles de même valeur qui se touchent fusionnent en leur somme (2+2=4, 4+4=8…).",
+      "Après chaque coup, une nouvelle tuile (2 ou 4) apparaît sur une case vide.",
+      "Chaque fusion rapporte des points. La partie se termine quand plus aucun mouvement n'est possible.",
+    ],
+  },
+  motsmeles: {
+    title: "Mots Mêlés",
+    emoji: "🔤",
+    lines: [
+      "But : retrouver tous les mots de la liste, cachés dans la grille de lettres.",
+      "Les mots peuvent être placés dans tous les sens : horizontal, vertical, diagonale, à l'endroit comme à l'envers.",
+      "Glisse ton doigt de la PREMIÈRE à la DERNIÈRE lettre du mot pour le sélectionner.",
+      "Un mot trouvé se colore dans la grille et se barre dans la liste.",
+      "Trouve les 9 mots pour gagner ! Change de thème quand tu veux avec ↺.",
+    ],
+  },
   tetris: {
     title: "Tetris",
     emoji: "🧱",
