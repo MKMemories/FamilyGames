@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get, onValue, update, push, remove, serverTimestamp, onDisconnect } from "firebase/database";
+import { getDatabase, ref, set as rawSet, get, onValue, update as rawUpdate, push, remove, serverTimestamp, onDisconnect } from "firebase/database";
+import { stripUndefined } from "./fbClean";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDrZuvQupxvIAOL6mNo5p0CMiI2jLNFjvI",
@@ -22,4 +23,10 @@ export function removeOnDisconnect(path: string) {
 export function cancelOnDisconnect(path: string) {
   try { onDisconnect(ref(db, path)).cancel(); } catch { /* ignore */ }
 }
-export { set, get, onValue, update, push, remove, serverTimestamp };
+/* Firebase RTDB REFUSE toute valeur `undefined` (contrairement à `null`,
+   accepté et interprété comme suppression). Une seule propriété `undefined`
+   fait échouer toute l'écriture. On les retire donc systématiquement — comme
+   le fait déjà notre mock de test — pour qu'aucun jeu ne puisse crasher ainsi. */
+export const set = (r: ReturnType<typeof ref>, val: unknown) => rawSet(r, stripUndefined(val));
+export const update = (r: ReturnType<typeof ref>, data: object) => rawUpdate(r, stripUndefined(data) as object);
+export { get, onValue, push, remove, serverTimestamp };

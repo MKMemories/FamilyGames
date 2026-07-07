@@ -85,8 +85,10 @@ function buildOne(type: MixType, used: Set<string>, rnd: () => number): MixRound
   if (type === "vf") {
     const pick = shuffle(VRAI_FAUX, rnd).find(x => !used.has(`v:${x.text}`));
     if (!pick) return null;
-    return { type, cat: CAT_LABEL.vf, q: pick.text, options: ["Vrai", "Faux"],
-      answer: pick.answer ? "Vrai" : "Faux", explain: pick.explain };
+    const r: MixRound = { type, cat: CAT_LABEL.vf, q: pick.text, options: ["Vrai", "Faux"],
+      answer: pick.answer ? "Vrai" : "Faux" };
+    if (pick.explain) r.explain = pick.explain;   // pas de clé `undefined` (refusée par Firebase)
+    return r;
   }
   if (type === "prix") {
     const p = shuffle(JP_PRODUCTS, rnd).find(x => !used.has(`p:${x.id}`));
