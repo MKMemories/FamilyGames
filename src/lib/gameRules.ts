@@ -80,6 +80,30 @@ export const GAME_RULES: Partial<Record<GameId, GameRule>> = {
       "Fin quand la pioche est vide ou que tout le monde passe : plus haut score gagne.",
     ],
   },
+  sudoku: {
+    title: "Sudoku",
+    emoji: "🔢",
+    lines: [
+      "But : remplir la grille 9×9 avec les chiffres de 1 à 9.",
+      "Règle d'or : chaque chiffre apparaît UNE seule fois par ligne, par colonne, et dans chaque bloc de 3×3.",
+      "Touche une case vide, puis un chiffre du pavé pour la remplir. Les chiffres en gras sont donnés au départ (non modifiables).",
+      "Un chiffre en rouge signale un conflit (déjà présent sur la ligne/colonne/bloc).",
+      "« Notes » ✏️ : crayonne plusieurs petits chiffres dans une case pour t'aider. « Indice » 💡 dévoile la case sélectionnée.",
+      "Chaque grille a une solution unique. Le chrono et le compteur de fautes suivent ta performance.",
+    ],
+  },
+  motsfleches: {
+    title: "Mots Fléchés",
+    emoji: "➡️",
+    lines: [
+      "But : remplir toute la grille à partir des définitions.",
+      "Les cases foncées contiennent une définition et une flèche : ▶ = le mot part vers la droite, ▼ = vers le bas.",
+      "Touche une case fléchée (ou une lettre) : la définition s'affiche en grand en haut, et le mot se surligne.",
+      "Tape les lettres au clavier : le curseur avance tout seul dans le mot.",
+      "Touche une lettre déjà partagée par deux mots pour basculer de l'un à l'autre (les mots se croisent).",
+      "« Vérifier » ✅ marque les lettres fausses en rouge · « Révéler » 💡 complète le mot sélectionné.",
+    ],
+  },
   des: {
     title: "Bluff des Dés",
     emoji: "🎲",

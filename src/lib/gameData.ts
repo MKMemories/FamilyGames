@@ -49,6 +49,8 @@ export const GAMES: Game[] = [
   { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6", grad: "#a78bfa", cat: "duo" },
   { id: "awale", name: "Awalé", emoji: "🫘", desc: "Le grand classique africain des semailles — sème et capture les graines", min: 2, max: 2, color: "#b45309", grad: "#f59e0b", cat: "duo" },
   /* ── 🧭 AVENTURE SOLO ── */
+  { id: "sudoku", name: "Sudoku", emoji: "🔢", desc: "Le célèbre casse-tête des chiffres — 3 niveaux, grille à solution unique", min: 1, max: 1, color: "#6366f1", grad: "#818cf8", cat: "solo" },
+  { id: "motsfleches", name: "Mots Fléchés", emoji: "➡️", desc: "Remplis la grille à partir des définitions — le grand classique français", min: 1, max: 1, color: "#0d9488", grad: "#2dd4bf", cat: "solo" },
   // « Le Chronovore » masqué de la ludothèque (rendu 3D non abouti). Le code du
   // jeu reste en place (route App + getInitData) : réactivable en réajoutant
   // simplement son entrée ci-dessous.
@@ -450,6 +452,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "motmystere") return { wmWord: null, wmRound: 0, wmTotalRounds: 6, wmGuesses: {}, wmDone: {}, wmSolved: {}, wmTimes: {}, wmRevealed: false, wmUsed: [] };
   if (game === "yams") return { ymOrder: [], ymTurn: 0, ymDice: null, ymHeld: [false, false, false, false, false], ymRolls: 0, ymScores: {} };
   if (game === "awale") return { awBoard: awNewBoard(), awStores: [0, 0], awTurn: 0, awOrder: [], awMoves: 0, awLast: null, awGain: 0 };
+  if (game === "sudoku" || game === "motsfleches") return {}; // solo local : état géré dans le composant
   return {};
 }
 
