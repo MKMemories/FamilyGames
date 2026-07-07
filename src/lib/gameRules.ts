@@ -126,6 +126,18 @@ export const GAME_RULES: Partial<Record<GameId, GameRule>> = {
       "Trouve les 9 mots pour gagner ! Change de thème quand tu veux avec ↺.",
     ],
   },
+  actionverite: {
+    title: "Action ou Vérité",
+    emoji: "🎯",
+    lines: [
+      "Chacun son tour, le joueur désigné choisit « Vérité » (une question rigolote) ou « Action » (un petit défi).",
+      "Une carte apparaît : réponds sincèrement, ou relève le défi devant tout le monde !",
+      "Pas inspiré ? Touche « 🔄 Autre » pour tirer une nouvelle carte.",
+      "Puis « Suivant → » passe la main au joueur suivant.",
+      "Tout est 100 % bienveillant et familial — l'important, c'est de rigoler ensemble.",
+      "L'hôte peut terminer la soirée à tout moment avec le bouton 🏁.",
+    ],
+  },
   tetris: {
     title: "Tetris",
     emoji: "🧱",

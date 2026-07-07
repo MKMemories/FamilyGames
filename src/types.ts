@@ -1,6 +1,6 @@
 export type Screen = "home" | "pick" | "setup" | "lobby" | "game" | "result" | "palmares";
 export type Difficulty = "facile" | "moyen" | "difficile";
-export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere" | "yams" | "awale" | "sudoku" | "motsfleches" | "tetris" | "2048" | "motsmeles";
+export type GameId = "scrabble" | "chess" | "checkers" | "connect4" | "quiz" | "defi" | "justeprix" | "dessin" | "chronovore" | "imposteur" | "quidenous" | "bataille" | "morpion" | "petitbac" | "bombe" | "des" | "blokus" | "grandscrabble" | "monopoly" | "uno" | "marque" | "memory" | "motmystere" | "yams" | "awale" | "sudoku" | "motsfleches" | "tetris" | "2048" | "motsmeles" | "actionverite";
 
 export interface MemberPreset {
   name: string;
@@ -239,6 +239,15 @@ export interface Room {
   impWordImposter?: string;
   impSeen?: Record<string, boolean>;
   impVotes?: Record<string, string>;
+  // Action ou Vérité (soirée famille)
+  avOrder?: string[];                 // ordre de passage
+  avTurn?: number;                    // index dans avOrder
+  avType?: "verite" | "action" | null; // choix du joueur courant
+  avPrompt?: string | null;           // invite tirée
+  avUsedV?: number[];                 // vérités déjà tirées (non-répétition)
+  avUsedA?: number[];                 // actions déjà tirées
+  avCounts?: Record<string, number>;  // défis relevés par joueur
+  avRound?: number;                   // tours joués (info)
   // Qui de nous… ?
   qdnPhase?: "vote" | "reveal" | null;
   qdnRound?: number;

@@ -38,6 +38,7 @@ export const GAMES: Game[] = [
   { id: "scrabble", name: "Mot pour Mot", emoji: "🔤", desc: "Scrabble familial — forme des mots, marque des points", min: 2, max: 4, color: "#14b8a6", grad: "#2dd4bf", cat: "famille" },
   { id: "imposteur", name: "L'Imposteur", emoji: "🕵️", desc: "Chacun son mot secret — démasque l'intrus par le vote", min: 3, max: 8, color: "#f43f5e", grad: "#fb7185", cat: "famille" },
   { id: "quidenous", name: "Qui de nous… ?", emoji: "🙋", desc: "Vote en secret, révélation hilarante en famille", min: 3, max: 8, color: "#10b981", grad: "#34d399", cat: "famille" },
+  { id: "actionverite", name: "Action ou Vérité", emoji: "🎯", desc: "Vérité rigolote ou petit défi — la soirée famille par excellence", min: 2, max: 8, color: "#e11d48", grad: "#fb7185", cat: "famille" },
   { id: "memory", name: "Memory des Paires", emoji: "🃏", desc: "Retrouve les paires cachées — le plus de mémoire gagne !", min: 1, max: 4, color: "#8b5cf6", grad: "#a78bfa", cat: "famille" },
   { id: "motmystere", name: "Le Mot Mystère", emoji: "🔡", desc: "Devine le mot caché de 5 lettres — vert, jaune, gris te guident !", min: 1, max: 4, color: "#0891b2", grad: "#22d3ee", cat: "famille" },
   { id: "yams", name: "Yam's", emoji: "🎲", desc: "Lance les 5 dés, garde les bons et remplis ta feuille de score !", min: 1, max: 4, color: "#d97706", grad: "#fbbf24", cat: "famille" },
@@ -442,6 +443,7 @@ export function getInitData(game: GameId): Record<string, any> {
   if (game === "chronovore") return {};
   if (game === "imposteur") return { impPhase: null, impRound: 0, impVotes: {}, impSeen: {} };
   if (game === "quidenous") return { qdnPhase: null, qdnRound: 0, qdnTotalRounds: 8, qdnUsed: [], qdnVotes: {} };
+  if (game === "actionverite") return { avOrder: [], avTurn: 0, avType: null, avPrompt: null, avUsedV: [], avUsedA: [], avCounts: {}, avRound: 0 };
   if (game === "bataille") return { bnPhase: "place", bnGrids: {}, bnReady: {}, bnShots: {}, bnTurn: "", bnWinner: "" };
   if (game === "morpion") return { mpCells: Array(9).fill(""), mpTurn: "", mpWinner: "", mpLine: [] };
   if (game === "petitbac") return { pbPhase: null, pbRound: 0, pbTotalRounds: 5, pbUsedLetters: [], pbAnswers: {}, pbDone: {}, pbStopBy: null, pbStopAt: null };
