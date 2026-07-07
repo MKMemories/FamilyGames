@@ -5,6 +5,19 @@ import type { GameId } from "../types";
 export interface GameRule { title: string; emoji: string; lines: string[]; }
 
 export const GAME_RULES: Partial<Record<GameId, GameRule>> = {
+  bataille: {
+    title: "Bataille Navale",
+    emoji: "🚢",
+    lines: [
+      "But : repérer et couler les 5 bateaux de l'adversaire avant qu'il coule les tiens.",
+      "1) Placement : pose tes 5 bateaux sur TA grille. Touche une case pour poser le bateau en cours ; le bouton « Orientation » le met horizontal ↔ ou vertical ↕. « Aléatoire » place toute la flotte d'un coup.",
+      "2) Quand les deux flottes sont prêtes, le combat démarre.",
+      "3) À ton tour, touche une case de la GRILLE ADVERSE (celle du haut) pour y tirer — à l'aveugle, sans voir ses bateaux.",
+      "🎯 Rouge = touché · 💧 Bleu = raté. « Touché-coulé ! » quand un bateau entier est atteint.",
+      "On tire chacun son tour (même après un touché). Le compteur « Touchés : X/17 » suit ta progression : 17 cases de bateaux à couler en tout.",
+      "En bas, « Ta flotte » montre tes bateaux et les tirs que tu subis. Premier à tout couler = victoire !",
+    ],
+  },
   des: {
     title: "Bluff des Dés",
     emoji: "🎲",

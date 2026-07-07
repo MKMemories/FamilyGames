@@ -400,6 +400,11 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
                   <b>Flotte complète — prêt à combattre !</b>
                 )}
               </div>
+              <div className="bn-guide">
+                {nextSpec
+                  ? "👆 Touche ta grille pour poser le bateau · « Orientation » pour le tourner · « Aléatoire » place tout"
+                  : "✅ Valide avec « Je suis prêt » pour lancer le combat"}
+              </div>
 
               {renderGrid({
                 variant: "place",
@@ -461,6 +466,11 @@ export function BatailleNavale({ room, roomId, playerId, isHost, isSolo, onLeave
               </div>
 
               <div className="bn-fire-label">Grille adverse {isMyTurn ? "— tire !" : ""}</div>
+              <div className="bn-guide">
+                {isMyTurn
+                  ? "👆 Touche une case pour tirer · 🎯 touché · 💧 raté · coule les 5 bateaux !"
+                  : "⏳ L'adversaire tire — observe « Ta flotte » en bas."}
+              </div>
               <AnimatePresence>
                 {aiFireActive && (
                   <motion.div
@@ -661,6 +671,7 @@ const BN_CSS = `
 
 .bn-place-info{ font-size:.9rem; color:var(--text,#3a2d4a); }
 .bn-place-info b{ color:var(--accent,#7c5cbf); }
+.bn-guide{ text-align:center; font-size:.74rem; font-weight:700; line-height:1.35; color:var(--muted); max-width:340px; margin:.15rem auto .35rem; padding:0 .4rem; }
 .bn-dim{ color:var(--muted,#9b8aaa); font-size:.8rem; }
 
 /* ── Grid = framed sonar chart over deep sea ──────────────────────────── */
