@@ -29,6 +29,8 @@ import quidenous from "../assets/icons/quidenous.webp";
 import sudoku from "../assets/icons/sudoku.webp";
 import motsfleches from "../assets/icons/motsfleches.webp";
 import tetris from "../assets/icons/tetris.webp";
+import icon2048 from "../assets/icons/2048.webp";
+import motsmeles from "../assets/icons/motsmeles.webp";
 
 export const GAME_ICONS: Partial<Record<GameId, string>> = {
   uno,
@@ -58,6 +60,8 @@ export const GAME_ICONS: Partial<Record<GameId, string>> = {
   sudoku,
   motsfleches,
   tetris,
+  "2048": icon2048,
+  motsmeles,
 };
 
 export function gameIcon(id: GameId): string | undefined {
