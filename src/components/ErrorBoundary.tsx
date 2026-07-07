@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ReactNode, type ErrorInfo } from "react";
 
 /* Filet de sécurité global : empêche l'écran blanc « bloqué ».
    - Une erreur de chargement de module (chunk périmé après un déploiement) →
@@ -6,7 +6,14 @@ import { Component, type ReactNode } from "react";
    - Toute autre erreur → écran de secours lisible avec bouton « Recharger ». */
 
 interface Props { children: ReactNode; }
-interface State { error: Error | null; }
+interface State { error: Error | null; info: ErrorInfo | null; }
+
+/** Nom du 1er composant de la pile (le composant fautif) → aide au diagnostic. */
+const firstComponent = (info: ErrorInfo | null): string | null => {
+  const stack = info?.componentStack || "";
+  const m = stack.match(/at\s+([A-Za-z0-9_]+)/) || stack.match(/^\s*([A-Za-z0-9_]+)@/m);
+  return m ? m[1] : null;
+};
 
 const isChunkError = (e: unknown): boolean => {
   const m = (e instanceof Error ? e.message : String(e || "")).toLowerCase();
@@ -21,13 +28,14 @@ const isChunkError = (e: unknown): boolean => {
 };
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, info: null };
 
   static getDerivedStateFromError(error: Error): State {
-    return { error };
+    return { error, info: null };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    this.setState({ info });
     // Chunk périmé : on tente un rechargement unique (garde anti-boucle).
     if (isChunkError(error)) {
       try {
@@ -64,6 +72,11 @@ export class ErrorBoundary extends Component<Props, State> {
             <button className="btn btn-primary" style={{ marginTop: ".4rem", minWidth: 180 }} onClick={this.reset}>
               🔄 Recharger
             </button>
+            {!chunk && (
+              <div style={{ marginTop: ".6rem", width: "100%", fontSize: ".68rem", color: "var(--muted)", fontFamily: "var(--mono, ui-monospace, monospace)", textAlign: "left", background: "var(--surface-2, rgba(0,0,0,.05))", border: "1px solid var(--border)", borderRadius: 10, padding: ".55rem .65rem", wordBreak: "break-word", lineHeight: 1.45 }}>
+                <strong>{firstComponent(this.state.info) || "?"}</strong> — {this.state.error.message}
+              </div>
+            )}
           </div>
         </div>
       );
