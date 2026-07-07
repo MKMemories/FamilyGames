@@ -49,7 +49,10 @@ export const GAMES: Game[] = [
   { id: "morpion", name: "Morpion", emoji: "❎", desc: "Aligne 3 symboles avant l'autre joueur", min: 2, max: 2, color: "#8b5cf6", grad: "#a78bfa", cat: "duo" },
   { id: "awale", name: "Awalé", emoji: "🫘", desc: "Le grand classique africain des semailles — sème et capture les graines", min: 2, max: 2, color: "#b45309", grad: "#f59e0b", cat: "duo" },
   /* ── 🧭 AVENTURE SOLO ── */
-  { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8", grad: "#7dd3fc", cat: "solo" },
+  // « Le Chronovore » masqué de la ludothèque (rendu 3D non abouti). Le code du
+  // jeu reste en place (route App + getInitData) : réactivable en réajoutant
+  // simplement son entrée ci-dessous.
+  // { id: "chronovore", name: "Le Chronovore", emoji: "🔮", desc: "Escape room 3D narrative — échappe-toi d'un instant figé du temps", min: 1, max: 1, color: "#38bdf8", grad: "#7dd3fc", cat: "solo" },
 ];
 
 /* Rubriques de la ludothèque, dans l'ordre d'affichage. */
