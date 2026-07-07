@@ -104,6 +104,19 @@ export const GAME_RULES: Partial<Record<GameId, GameRule>> = {
       "« Vérifier » ✅ marque les lettres fausses en rouge · « Révéler » 💡 complète le mot sélectionné.",
     ],
   },
+  tetris: {
+    title: "Tetris",
+    emoji: "🧱",
+    lines: [
+      "But : compléter des lignes horizontales pleines pour les faire disparaître, et durer le plus longtemps.",
+      "Les pièces tombent. Déplace-les ◀ ▶, tourne-les ⟳, accélère la descente ▼.",
+      "⤓ = chute instantanée (hard drop). La pièce fantôme montre où elle va atterrir.",
+      "HOLD met une pièce de côté pour la ressortir plus tard (une fois par pièce).",
+      "Compléter 4 lignes d'un coup = un TETRIS (gros bonus de points).",
+      "Tous les 10 lignes, le niveau monte et les pièces tombent plus vite. Fin quand la pile atteint le haut.",
+      "Clavier : ← → déplacer · ↑/X tourner · ↓ descendre · Espace chute · Maj/C réserve · P pause.",
+    ],
+  },
   des: {
     title: "Bluff des Dés",
     emoji: "🎲",
