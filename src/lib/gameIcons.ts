@@ -20,6 +20,7 @@ import bataille from "../assets/icons/bataille.webp";
 import morpion from "../assets/icons/morpion.webp";
 import awale from "../assets/icons/awale.webp";
 import justeprix from "../assets/icons/justeprix.webp";
+import defi from "../assets/icons/defi.webp";
 
 export const GAME_ICONS: Partial<Record<GameId, string>> = {
   uno,
@@ -40,6 +41,7 @@ export const GAME_ICONS: Partial<Record<GameId, string>> = {
   morpion,
   awale,
   justeprix,
+  defi,
 };
 
 export function gameIcon(id: GameId): string | undefined {
