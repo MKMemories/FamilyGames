@@ -35,6 +35,46 @@ export const MF_PUZZLES: MFPuzzle[] = [
       { r: 7, c: 1, dir: "R", answer: "TORTUE", clue: "Très lente, elle porte sa maison" },
     ],
   },
+  {
+    id: "animaux", name: "Les animaux", emoji: "🦊", cols: 7, rows: 8,
+    words: [
+      { r: 3, c: 1, dir: "R", answer: "RENARD", clue: "Rusé, il a une queue touffue" },
+      { r: 1, c: 1, dir: "D", answer: "OURSE", clue: "Femelle de l'ours" },
+      { r: 1, c: 3, dir: "D", answer: "PANDA", clue: "Ours noir et blanc de Chine" },
+      { r: 2, c: 5, dir: "D", answer: "CRI", clue: "Hurlement" },
+      { r: 7, c: 1, dir: "R", answer: "SOURIS", clue: "Petit rongeur… ou celle de l'ordi" },
+    ],
+  },
+  {
+    id: "nature", name: "La nature", emoji: "🌿", cols: 7, rows: 8,
+    words: [
+      { r: 3, c: 1, dir: "R", answer: "SOLEIL", clue: "Il brille et nous réchauffe" },
+      { r: 1, c: 1, dir: "D", answer: "OASIS", clue: "Point d'eau dans le désert" },
+      { r: 1, c: 3, dir: "D", answer: "VOLER", clue: "Se déplacer dans les airs" },
+      { r: 2, c: 5, dir: "D", answer: "RIZ", clue: "Céréale blanche en grains" },
+      { r: 7, c: 1, dir: "R", answer: "NUAGES", clue: "Ils flottent dans le ciel" },
+    ],
+  },
+  {
+    id: "sport", name: "Sport & loisirs", emoji: "⚽", cols: 7, rows: 8,
+    words: [
+      { r: 3, c: 1, dir: "R", answer: "TENNIS", clue: "Sport de raquette avec un filet" },
+      { r: 1, c: 1, dir: "D", answer: "MATCH", clue: "Rencontre sportive" },
+      { r: 1, c: 3, dir: "D", answer: "CANOE", clue: "Barque légère à la pagaie" },
+      { r: 2, c: 5, dir: "D", answer: "VIF", clue: "Rapide, plein d'énergie" },
+      { r: 7, c: 1, dir: "R", answer: "BALLON", clue: "Rond, on le shoote au foot" },
+    ],
+  },
+  {
+    id: "voyage", name: "En voyage", emoji: "✈️", cols: 7, rows: 8,
+    words: [
+      { r: 3, c: 1, dir: "R", answer: "TRAINS", clue: "Ils roulent sur des rails (pluriel)" },
+      { r: 1, c: 1, dir: "D", answer: "MOTOS", clue: "Deux-roues à moteur (pluriel)" },
+      { r: 1, c: 3, dir: "D", answer: "PLAGE", clue: "Étendue de sable au bord de la mer" },
+      { r: 2, c: 5, dir: "D", answer: "UNE", clue: "La première page du journal" },
+      { r: 7, c: 1, dir: "R", answer: "VALISE", clue: "On la remplit pour partir" },
+    ],
+  },
 ];
 
 /** Construit et VALIDE le modèle d'affichage d'une grille. Lève en cas
