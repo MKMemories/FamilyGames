@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from "react";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { dbRef, set, get, onValue, update, remove, removeOnDisconnect, cancelOnDisconnect } from "./lib/firebase";
 import { uid, getInitData, buildBag, MEMBER_PRESETS, GAMES, AI_PLAYER, gameSupportsAI } from "./lib/gameData";
 import { HomeScreen } from "./components/HomeScreen";
@@ -422,6 +423,7 @@ function App() {
       )}
 
       {screen === "game" && room && activeGame && roomId && playerId && (
+        <ErrorBoundary>
         <Suspense fallback={<div className="screen" style={{ display: "grid", placeItems: "center" }}><div className="spinner" /></div>}>
           {activeGame !== "chronovore" && <RulesSheet gameId={activeGame} />}
           {activeGame === "connect4" && <Connect4 room={room} roomId={roomId} playerId={playerId} onLeave={leaveRoom} />}
@@ -498,6 +500,7 @@ function App() {
             <Uno room={room} roomId={roomId} playerId={playerId} isHost={isHost} isSolo={isSolo} onLeave={leaveRoom} onToast={showToast} />
           )}
         </Suspense>
+        </ErrorBoundary>
       )}
 
       {screen === "result" && room && (
