@@ -1697,6 +1697,23 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
 /* Hero d'accueil premium */
 .home-screen { position: relative; }
 
+/* ── Recherche de la ludothèque ── */
+.pick-search {
+  display: flex; align-items: center; gap: .5rem;
+  max-width: 520px; margin: .2rem auto 1rem; width: calc(100% - .8rem);
+  background: var(--surface-1); border: 1.5px solid var(--border); border-radius: 14px;
+  padding: .1rem .7rem; box-shadow: var(--shadow);
+}
+.pick-search:focus-within { border-color: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.pick-search-ico { font-size: 1rem; opacity: .8; }
+.pick-search-input { flex: 1; border: none; background: transparent; outline: none; color: var(--text);
+  font-family: var(--font-b); font-weight: 700; font-size: .95rem; padding: .65rem 0; min-width: 0; }
+.pick-search-input::placeholder { color: var(--muted); font-weight: 600; }
+.pick-search-clear { border: none; background: var(--surface-2); color: var(--muted); cursor: pointer;
+  width: 26px; height: 26px; border-radius: 50%; font-size: .8rem; flex: 0 0 auto; display: grid; place-items: center; }
+.pick-search-clear:hover { color: var(--text); }
+.pick-empty { text-align: center; color: var(--muted); font-weight: 700; font-size: .92rem; line-height: 1.6; padding: 1.4rem 1rem; }
+
 /* ── Bandeau hero d'accueil (illustration 3D, remplace les emojis flottants) ── */
 .home-hero {
   position: relative; width: 100%; aspect-ratio: 16 / 8; border-radius: 22px; overflow: hidden;

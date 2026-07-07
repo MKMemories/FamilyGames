@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { GAMES, GAME_SECTIONS } from "../lib/gameData";
 import { gameIcon } from "../lib/gameIcons";
@@ -50,13 +50,23 @@ function GameCard({ g, badge, onSelect }: { g: Game; badge?: string; onSelect: (
   );
 }
 
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
 export function PickScreen({ onSelect, onBack }: PickScreenProps) {
+  const [query, setQuery] = useState("");
+  const q = norm(query.trim());
+
   // Jeux les plus joués (temps de jeu cumulé, local) → remontés en tête.
   const top = useMemo(() => {
     return topPlayedGames(4)
       .map(({ game, stat }) => ({ g: GAMES.find(x => x.id === game), secs: stat.secs }))
       .filter((x): x is { g: Game; secs: number } => !!x.g);
   }, []);
+
+  const results = useMemo(
+    () => (q ? GAMES.filter(g => norm(g.name).includes(q) || norm(g.desc).includes(q)) : []),
+    [q],
+  );
 
   return (
     <div className="screen pick-screen">
@@ -69,6 +79,43 @@ export function PickScreen({ onSelect, onBack }: PickScreenProps) {
         </div>
         <div style={{ width: 40 }} />
       </div>
+
+      {/* 🔍 Recherche */}
+      <div className="pick-search">
+        <span className="pick-search-ico" aria-hidden>🔍</span>
+        <input
+          className="pick-search-input"
+          type="text"
+          inputMode="search"
+          placeholder="Rechercher un jeu…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          aria-label="Rechercher un jeu"
+        />
+        {query && <button className="pick-search-clear" onClick={() => setQuery("")} aria-label="Effacer">✕</button>}
+      </div>
+
+      {q ? (
+        <section className="pick-section">
+          <motion.div className="section-head" initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}>
+            <span className="section-icon">🔍</span>
+            <div className="section-text">
+              <span className="section-label">Résultats</span>
+              <span className="section-hint">{results.length ? `pour « ${query.trim()} »` : "Aucun jeu ne correspond"}</span>
+            </div>
+            <span className="section-count">{results.length}</span>
+          </motion.div>
+          {results.length ? (
+            <motion.div className="games-grid" variants={container} initial="hidden" animate="show">
+              {results.map(g => <GameCard key={g.id} g={g} onSelect={onSelect} />)}
+            </motion.div>
+          ) : (
+            <div className="pick-empty">😕 Aucun jeu trouvé.<br />Essaie « uno », « dés », « mots »…</div>
+          )}
+        </section>
+      ) : (
+      <>
 
       {/* 🔥 Les plus joués (d'après ton temps de jeu) */}
       {top.length > 0 && (
@@ -113,6 +160,8 @@ export function PickScreen({ onSelect, onBack }: PickScreenProps) {
           </section>
         );
       })}
+      </>
+      )}
     </div>
   );
 }
