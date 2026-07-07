@@ -31,6 +31,7 @@ import motsfleches from "../assets/icons/motsfleches.webp";
 import tetris from "../assets/icons/tetris.webp";
 import icon2048 from "../assets/icons/2048.webp";
 import motsmeles from "../assets/icons/motsmeles.webp";
+import actionverite from "../assets/icons/actionverite.webp";
 
 export const GAME_ICONS: Partial<Record<GameId, string>> = {
   uno,
@@ -62,6 +63,7 @@ export const GAME_ICONS: Partial<Record<GameId, string>> = {
   tetris,
   "2048": icon2048,
   motsmeles,
+  actionverite,
 };
 
 export function gameIcon(id: GameId): string | undefined {
