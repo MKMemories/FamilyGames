@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { MEMBER_PRESETS, GAMES } from "../lib/gameData";
 import { Logo } from "./Logo";
 import heroClay from "../assets/hero-clay.webp";
 import { Avatar } from "./Avatar";
 import { AvatarStudio } from "./AvatarStudio";
 import {
-  type Avatar as AvatarT, PRESET_AVATARS, DEFAULT_AVATAR, decodeAvatar, encodeAvatar,
+  type Avatar as AvatarT, PRESET_AVATARS, DEFAULT_AVATAR, decodeAvatar, encodeAvatar, randomAvatar,
 } from "../lib/avatar";
 
 interface HomeScreenProps {
@@ -20,64 +20,99 @@ interface HomeScreenProps {
 }
 
 const AV_KEY = "khelij_avatars";
-function loadAvatars(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(AV_KEY) || "{}"); } catch { return {}; }
+const PLAYERS_KEY = "khelij_players";
+const ADD_COLORS = ["#ff87b2", "#7cc7ff", "#ffbe72", "#67d9b5", "#c084fc", "#f87171", "#38bdf8", "#fbbf24"];
+
+interface CustomPlayer { name: string; color: string; }
+
+function loadJSON<T>(key: string, fallback: T): T {
+  try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; } catch { return fallback; }
 }
-function persistAvatars(m: Record<string, string>) {
-  try { localStorage.setItem(AV_KEY, JSON.stringify(m)); } catch { /* ignore */ }
-}
-const CUSTOM = "__custom";
+function saveJSON(key: string, v: unknown) { try { localStorage.setItem(key, JSON.stringify(v)); } catch { /* ignore */ } }
 
 export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvatar, onContinue, onPalmares, onToast }: HomeScreenProps) {
-  const [customName, setCustomName] = useState("");
-  const [avatars, setAvatars] = useState<Record<string, string>>(loadAvatars);
+  const [avatars, setAvatars] = useState<Record<string, string>>(() => loadJSON(AV_KEY, {}));
+  const [players, setPlayers] = useState<CustomPlayer[]>(() => loadJSON<CustomPlayer[]>(PLAYERS_KEY, []));
   const [studio, setStudio] = useState(false);
+  const [studioInit, setStudioInit] = useState<AvatarT>(DEFAULT_AVATAR);
+  const [pendingNew, setPendingNew] = useState<CustomPlayer | null>(null);
+  const [addMode, setAddMode] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState(ADD_COLORS[0]);
 
   const avatarFor = useCallback((name: string): AvatarT => {
     return decodeAvatar(avatars[name]) || PRESET_AVATARS[name] || DEFAULT_AVATAR;
   }, [avatars]);
 
-  const selectedKey = customName.trim() ? CUSTOM : (playerName || "");
-  const currentAvatar: AvatarT = useMemo(() => {
-    return decodeAvatar(playerAvatar) || (selectedKey ? avatarFor(selectedKey) : DEFAULT_AVATAR);
-  }, [playerAvatar, selectedKey, avatarFor]);
+  const currentAvatar: AvatarT = useMemo(
+    () => decodeAvatar(playerAvatar) || (playerName ? avatarFor(playerName) : DEFAULT_AVATAR),
+    [playerAvatar, playerName, avatarFor],
+  );
 
-  const pickPreset = (m: typeof MEMBER_PRESETS[number]) => {
-    setCustomName("");
-    onSelectPlayer(m.name, m.color, encodeAvatar(avatarFor(m.name)));
+  const pickPlayer = (name: string, color: string) => {
+    setAddMode(false);
+    onSelectPlayer(name, color, encodeAvatar(avatarFor(name)));
+  };
+
+  /** Crée (ou met à jour) un joueur et le persiste avec son avatar. */
+  const createPlayer = (name: string, color: string, avatar: AvatarT) => {
+    const enc = encodeAvatar(avatar);
+    const nextAv = { ...avatars, [name]: enc };
+    setAvatars(nextAv); saveJSON(AV_KEY, nextAv);
+    const isPreset = MEMBER_PRESETS.some(m => m.name === name);
+    if (!isPreset && !players.some(p => p.name === name)) {
+      const next = [...players, { name, color }];
+      setPlayers(next); saveJSON(PLAYERS_KEY, next);
+    }
+    setAddMode(false); setNewName("");
+    onSelectPlayer(name, color, enc);
+  };
+
+  const removePlayer = (name: string) => {
+    const next = players.filter(p => p.name !== name);
+    setPlayers(next); saveJSON(PLAYERS_KEY, next);
+    const nextAv = { ...avatars }; delete nextAv[name]; setAvatars(nextAv); saveJSON(AV_KEY, nextAv);
+    if (playerName === name) onSelectPlayer("", "");
+    onToast(`${name} retiré`);
+  };
+
+  const openStudioEdit = () => {
+    if (!playerName) { onToast("Choisis d'abord un joueur !"); return; }
+    setPendingNew(null); setStudioInit(currentAvatar); setStudio(true);
+  };
+  const openStudioForNew = () => {
+    if (!newName.trim()) { onToast("Écris d'abord un prénom !"); return; }
+    setPendingNew({ name: newName.trim(), color: newColor }); setStudioInit(randomAvatar()); setStudio(true);
   };
 
   const saveAvatar = (a: AvatarT) => {
-    const key = selectedKey || CUSTOM;
-    const enc = encodeAvatar(a);
-    const next = { ...avatars, [key]: enc };
-    setAvatars(next); persistAvatars(next);
-    onSetAvatar(enc);
     setStudio(false);
+    if (pendingNew) { createPlayer(pendingNew.name, pendingNew.color, a); setPendingNew(null); return; }
+    if (!playerName) return;
+    const enc = encodeAvatar(a);
+    const next = { ...avatars, [playerName]: enc };
+    setAvatars(next); saveJSON(AV_KEY, next);
+    onSetAvatar(enc);
   };
 
   const handleContinue = () => {
-    if (customName.trim()) {
-      onSelectPlayer(customName.trim(), "#c9b8ff", encodeAvatar(avatarFor(CUSTOM)));
-      onContinue();
-      return;
-    }
-    if (!playerName) { onToast("Choisis ton prénom d'abord !"); return; }
+    if (!playerName) { onToast("Choisis ou crée ton joueur d'abord !"); return; }
     onContinue();
   };
 
   if (studio) {
     return (
       <AvatarStudio
-        initial={currentAvatar}
-        name={customName.trim() || playerName || "Toi"}
+        initial={studioInit}
+        name={pendingNew?.name || playerName || "Toi"}
         onSave={saveAvatar}
-        onClose={() => setStudio(false)}
+        onClose={() => { setStudio(false); setPendingNew(null); }}
       />
     );
   }
 
-  const hasIdentity = !!(customName.trim() || playerName);
+  const allPlayers = [...MEMBER_PRESETS.map(m => ({ name: m.name, color: m.color, preset: true })),
+    ...players.map(p => ({ name: p.name, color: p.color, preset: false }))];
 
   return (
     <div className="screen home-screen">
@@ -108,39 +143,67 @@ export function HomeScreen({ playerName, playerAvatar, onSelectPlayer, onSetAvat
         <div className="player-presets">
           <p className="label-sm">Qui es-tu ?</p>
           <div className="preset-grid">
-            {MEMBER_PRESETS.map((m, i) => (
+            {allPlayers.map((m, i) => (
               <motion.button
                 key={m.name}
-                className={`preset-btn av-preset ${playerName === m.name && !customName ? "active" : ""}`}
+                className={`preset-btn av-preset ${playerName === m.name ? "active" : ""}`}
                 style={{ "--pc": m.color } as React.CSSProperties}
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.15 + i * 0.06, type: "spring", stiffness: 400, damping: 24 }}
+                transition={{ delay: 0.12 + i * 0.05, type: "spring", stiffness: 400, damping: 24 }}
                 whileTap={{ scale: 0.95 }} whileHover={{ y: -3 }}
-                onClick={() => pickPreset(m)}
+                onClick={() => pickPlayer(m.name, m.color)}
               >
-                <Avatar a={avatarFor(m.name)} size={54} ring={playerName === m.name && !customName ? m.color : undefined} />
+                <Avatar a={avatarFor(m.name)} size={54} ring={playerName === m.name ? m.color : undefined} />
                 <span className="preset-name">{m.name}</span>
+                {!m.preset && (
+                  <span className="preset-remove" role="button" aria-label={`Retirer ${m.name}`}
+                    onClick={e => { e.stopPropagation(); removePlayer(m.name); }}>✕</span>
+                )}
               </motion.button>
             ))}
+
+            {/* ➕ Ajouter un joueur */}
+            <motion.button className="preset-btn av-add" onClick={() => { setAddMode(true); setNewName(""); }}
+              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.12 + allPlayers.length * 0.05, type: "spring", stiffness: 400, damping: 24 }}
+              whileTap={{ scale: 0.95 }} whileHover={{ y: -3 }}>
+              <span className="av-add-plus">＋</span>
+              <span className="preset-name">Ajouter</span>
+            </motion.button>
           </div>
 
-          {/* Personnalisation d'avatar */}
+          {/* Formulaire d'ajout */}
+          <AnimatePresence>
+            {addMode && (
+              <motion.div className="add-form" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                <input className="inp add-name" placeholder="Prénom du nouveau joueur…" maxLength={14} autoFocus
+                  value={newName} onChange={e => setNewName(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && newName.trim() && createPlayer(newName.trim(), newColor, randomAvatar())} />
+                <div className="add-colors">
+                  {ADD_COLORS.map(c => (
+                    <button key={c} className={`add-sw ${newColor === c ? "on" : ""}`} style={{ background: c }}
+                      onClick={() => setNewColor(c)} aria-label={`Couleur ${c}`} />
+                  ))}
+                </div>
+                <div className="add-actions">
+                  <button className="add-btn ghost" onClick={openStudioForNew}>🎨 Créer l'avatar</button>
+                  <button className="add-btn primary" onClick={() => newName.trim() ? createPlayer(newName.trim(), newColor, randomAvatar()) : onToast("Écris un prénom !")}>✓ Ajouter</button>
+                  <button className="add-btn" onClick={() => { setAddMode(false); setNewName(""); }}>Annuler</button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Personnaliser l'avatar du joueur sélectionné */}
           <motion.button className="av-customize-btn" whileTap={{ scale: 0.97 }} whileHover={{ y: -2 }}
-            onClick={() => { if (!hasIdentity) { onToast("Choisis d'abord ton prénom !"); return; } setStudio(true); }}
-            disabled={!hasIdentity}>
+            onClick={openStudioEdit} disabled={!playerName}>
             <span className="av-cz-preview"><Avatar a={currentAvatar} size={40} /></span>
             <span className="av-cz-text">
               <b>Personnaliser mon avatar</b>
-              <small>Coiffure, tenue, super-héros, accessoires…</small>
+              <small>{playerName ? `Coiffure, tenue, accessoires… (${playerName})` : "Choisis d'abord un joueur"}</small>
             </span>
             <span className="av-cz-arrow">✨</span>
           </motion.button>
-
-          <div className="or-row"><span>ou</span></div>
-          <div className="custom-name-row">
-            <input className="inp" placeholder="Ton prénom…" maxLength={14} value={customName}
-              onChange={e => { setCustomName(e.target.value); if (e.target.value) onSelectPlayer("", "", encodeAvatar(avatarFor(CUSTOM))); }} />
-          </div>
         </div>
 
         <motion.button className="btn btn-primary big-btn" onClick={handleContinue}

@@ -1800,6 +1800,67 @@ button { transition: transform .16s cubic-bezier(.34,1.56,.64,1), box-shadow .18
 .av-cz-arrow { font-size: 1.15rem; }
 .av-customize-btn:disabled { opacity: .5; }
 
+/* ➕ Carte « Ajouter un joueur » */
+.av-add {
+  border-style: dashed !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border)) !important;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)) !important;
+  justify-content: center;
+}
+.av-add-plus {
+  width: 54px; height: 54px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: 1.9rem; font-weight: 700; line-height: 1;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-1));
+  border: 2px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+/* ✕ Retirer un joueur perso */
+.av-preset { position: relative; }
+.preset-remove {
+  position: absolute; top: -6px; right: -6px; z-index: 2;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; font-size: .72rem; font-weight: 900; line-height: 1;
+  color: #fff; background: linear-gradient(135deg, #f87171, #ef4444);
+  border: 2px solid var(--surface-1); box-shadow: 0 2px 6px rgba(0,0,0,.22);
+  cursor: pointer;
+}
+.preset-remove:hover { transform: scale(1.12); }
+
+/* Formulaire d'ajout */
+.add-form {
+  overflow: hidden;
+  display: flex; flex-direction: column; gap: .6rem;
+  margin: 0 0 .9rem; padding: .8rem; border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-2));
+  border: 1.5px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+.add-name { width: 100%; text-align: center; }
+.add-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
+.add-sw {
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,.14);
+  transition: transform .15s, border-color .15s;
+}
+.add-sw:hover { transform: scale(1.12); }
+.add-sw.on { border-color: var(--text); transform: scale(1.14); }
+.add-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.add-btn {
+  flex: 1 1 auto; padding: .58rem .7rem; border-radius: 13px; font-weight: 800; font-size: .84rem;
+  border: 1.5px solid var(--border); background: var(--surface-1); color: var(--text); cursor: pointer;
+  transition: transform .15s, box-shadow .2s, background .2s;
+}
+.add-btn:hover { transform: translateY(-2px); }
+.add-btn.ghost {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+.add-btn.primary {
+  color: #fff; border-color: transparent;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 5px 16px rgba(122,80,160,.28);
+}
+
 /* Avatars dans lobby / résultats */
 .podium-avatar:has(svg) { background: none !important; box-shadow: none !important; }
 .podium-avatar svg, .prr-emoji svg, .player-row svg { display: block; }
