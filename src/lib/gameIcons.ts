@@ -22,6 +22,8 @@ import awale from "../assets/icons/awale.webp";
 import justeprix from "../assets/icons/justeprix.webp";
 import defi from "../assets/icons/defi.webp";
 import yams from "../assets/icons/yams.webp";
+import scrabble from "../assets/icons/scrabble.webp";
+import memory from "../assets/icons/memory.webp";
 
 export const GAME_ICONS: Partial<Record<GameId, string>> = {
   uno,
@@ -44,6 +46,8 @@ export const GAME_ICONS: Partial<Record<GameId, string>> = {
   justeprix,
   defi,
   yams,
+  scrabble,
+  memory,
 };
 
 export function gameIcon(id: GameId): string | undefined {
