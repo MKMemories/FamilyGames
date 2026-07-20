@@ -4,7 +4,8 @@ import { dbRef, update } from "../../lib/firebase";
 import { fx } from "../../lib/sound";
 import type { Room } from "../../types";
 import { useSoloAI } from "../../hooks/useSoloAI";
-import { PB_CATEGORY_POOL, PB_LETTERS, pbStripAccents, pbAiAnswer } from "../../lib/petitBacData";
+import { PB_CATEGORY_POOL, PB_LETTERS } from "../../lib/petitBacData";
+import { pbAnswerStatus, pbDictAnswer, pbDedupKey, type PbStatus } from "../../lib/petitBacDict";
 import { JokerBar } from "../JokerBar";
 import { initJokers, jokerCount, type JokerType } from "../../lib/jokers";
 
@@ -36,19 +37,6 @@ interface PetitBacProps {
 }
 
 const GRACE_MS = 10000;
-
-/* Première lettre significative sans accent (ignore espaces/apostrophes). */
-function firstLetter(s: string): string {
-  const t = pbStripAccents(s.trim());
-  for (const ch of t) if (ch >= "a" && ch <= "z") return ch;
-  return "";
-}
-function letterMatches(answer: string, letter: string): boolean {
-  const a = answer.trim();
-  if (!a) return false;
-  const l = pbStripAccents(letter)[0] || "";
-  return firstLetter(a) === l;
-}
 
 export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onToast }: PetitBacProps) {
   /* ── Lectures défensives ── */
@@ -110,15 +98,17 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
     return o;
   };
 
-  /* Points de la manche courante (déterministe depuis l'état → identique partout). */
+  /* Points de la manche courante (déterministe depuis l'état → identique partout).
+     Seules les réponses VALIDES (bonne lettre + reconnues dans la catégorie)
+     rapportent des points ; doublon = 5, unique = 10. */
   const roundPoints = (): Record<string, number> => {
     const pts: Record<string, number> = {};
     players.forEach((p) => { pts[p.id] = 0; });
-    categories.forEach((_, ci) => {
+    categories.forEach((cat, ci) => {
       const norm: Record<string, string> = {};
       players.forEach((p) => {
         const a = (answers[p.id]?.[ci] ?? "").trim();
-        if (a && letterMatches(a, letter)) norm[p.id] = pbStripAccents(a);
+        if (a && pbAnswerStatus(cat, a, letter) === "ok") norm[p.id] = pbDedupKey(a);
       });
       const vals = Object.values(norm);
       players.forEach((p) => {
@@ -142,23 +132,28 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
 
   /* Résultat détaillé d'une catégorie (pour l'affichage de la révélation). */
   const categoryResult = (ci: number) => {
+    const cat = categories[ci] ?? "";
     const norm: Record<string, string> = {};
     players.forEach((p) => {
       const a = (answers[p.id]?.[ci] ?? "").trim();
-      if (a && letterMatches(a, letter)) norm[p.id] = pbStripAccents(a);
+      if (a && pbAnswerStatus(cat, a, letter) === "ok") norm[p.id] = pbDedupKey(a);
     });
     const vals = Object.values(norm);
     return players.map((p) => {
       const a = (answers[p.id]?.[ci] ?? "").trim();
       const v = norm[p.id];
       let status: "unique" | "dup" | "invalid" = "invalid";
+      let reason: "" | "empty" | "letter" | "unknown" = "";
       let pts = 0;
       if (v) {
         const dup = vals.filter((x) => x === v).length > 1;
         status = dup ? "dup" : "unique";
         pts = dup ? 5 : 10;
+      } else {
+        const st = pbAnswerStatus(cat, a, letter);
+        reason = st === "ok" ? "" : st; // st ∈ empty | letter | unknown
       }
-      return { p, a, status, pts };
+      return { p, a, status, reason, pts };
     });
   };
 
@@ -229,7 +224,7 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
   useSoloAI(aiActive, `${round}-fill`, () => {
     if (!aiId || phase !== "fill" || done[aiId]) return;
     const ans: Record<string, string> = {};
-    categories.forEach((cat, ci) => { ans[ci] = pbAiAnswer(cat, letter); });
+    categories.forEach((cat, ci) => { ans[ci] = pbDictAnswer(cat, letter); });
     // Difficulté : on laisse volontairement quelques cases vides.
     const blanks = diff === "facile" ? 2 : diff === "moyen" ? 1 : 0;
     const idxs = categories.map((_, i) => i).sort(() => Math.random() - 0.5);
@@ -414,7 +409,12 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
             <div className="pb-cats">
               {categories.map((cat, ci) => {
                 const val = myAnswers[ci] ?? "";
-                const ok = val.trim() && letterMatches(val, letter);
+                const st: PbStatus = pbAnswerStatus(cat, val, letter);
+                const cls = st === "ok" ? "ok" : st === "letter" ? "bad" : st === "unknown" ? "warn" : "";
+                const hint =
+                  st === "letter" ? `commence par « ${letter} »`
+                  : st === "unknown" ? "mot non reconnu dans cette catégorie"
+                  : st === "ok" ? "valide ✓" : "";
                 return (
                   <motion.div
                     key={ci}
@@ -424,7 +424,7 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
                     transition={{ delay: ci * 0.05 }}
                   >
                     <label className="pb-cat-label">{cat}</label>
-                    <div className={`pb-input-wrap ${ok ? "ok" : ""}`}>
+                    <div className={`pb-input-wrap ${cls}`}>
                       <span className="pb-input-letter">{letter}</span>
                       <input
                         className="pb-input"
@@ -436,8 +436,11 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
                         spellCheck={false}
                         onChange={(e) => setMyAnswers((m) => ({ ...m, [ci]: e.target.value }))}
                       />
-                      {ok ? <span className="pb-input-ok">✓</span> : null}
+                      {st === "ok" ? <span className="pb-input-ok">✓</span>
+                        : st === "letter" ? <span className="pb-input-x">✕</span>
+                        : st === "unknown" ? <span className="pb-input-q">?</span> : null}
                     </div>
+                    <span className={`pb-input-hint ${cls}`}>{hint}</span>
                   </motion.div>
                 );
               })}
@@ -515,7 +518,7 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
             <div className="pb-reveal-cat-title">{cat}</div>
             <div className="pb-reveal-answers">
               <AnimatePresence>
-                {categoryResult(ci).map(({ p, a, status, pts }) => (
+                {categoryResult(ci).map(({ p, a, status, reason }) => (
                   <motion.div
                     key={p.id}
                     className={`pb-ans pb-ans-${status}`}
@@ -523,7 +526,14 @@ export function PetitBac({ room, roomId, playerId, isHost, isSolo, onLeave, onTo
                     animate={{ opacity: 1, x: 0 }}
                   >
                     <span className="pb-ans-emoji">{p.emoji || "🙂"}</span>
-                    <span className="pb-ans-text">{a || <i className="pb-ans-empty">— vide —</i>}</span>
+                    <span className="pb-ans-text">
+                      {a ? a : <i className="pb-ans-empty">— vide —</i>}
+                      {status === "invalid" && a && (
+                        <span className="pb-ans-why">
+                          {reason === "letter" ? "mauvaise lettre" : "hors catégorie"}
+                        </span>
+                      )}
+                    </span>
                     <span className="pb-ans-pts">
                       {status === "unique" ? "+10" : status === "dup" ? "+5" : "0"}
                     </span>
@@ -659,12 +669,23 @@ const PB_CSS = `
 .pb-input-wrap{display:flex;align-items:center;gap:.4rem;border:2px solid var(--border);border-radius:var(--radius-sm);
   background:var(--surface-2);padding:.15rem .5rem;transition:.15s;}
 .pb-input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring);}
-.pb-input-wrap.ok{border-color:var(--green);}
+.pb-input-wrap.ok{border-color:var(--green);background:linear-gradient(90deg,rgba(36,178,107,.1),var(--surface-2));}
+.pb-input-wrap.warn{border-color:var(--gold,#f0ab34);background:linear-gradient(90deg,rgba(240,171,52,.1),var(--surface-2));}
+.pb-input-wrap.bad{border-color:var(--danger,#f0455e);background:linear-gradient(90deg,rgba(240,69,94,.1),var(--surface-2));}
 .pb-input-letter{font-family:var(--font-d);font-size:1rem;color:var(--accent);opacity:.8;}
 .pb-input{flex:1;min-width:0;border:none;background:transparent;outline:none;font-family:var(--font-b);
   font-size:1rem;font-weight:800;color:var(--text);padding:.5rem 0;}
 .pb-input::placeholder{color:var(--muted);opacity:.6;font-weight:700;}
 .pb-input-ok{color:var(--green);font-weight:900;font-size:1rem;}
+.pb-input-x{color:var(--danger,#f0455e);font-weight:900;font-size:1rem;}
+.pb-input-q{color:var(--gold,#f0ab34);font-weight:900;font-size:1.05rem;}
+.pb-input-hint{font-size:.68rem;font-weight:800;min-height:1.05em;line-height:1.05;color:transparent;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pb-input-hint.ok{color:var(--green);}
+.pb-input-hint.warn{color:var(--gold,#c47d00);}
+.pb-input-hint.bad{color:var(--danger,#f0455e);}
+.pb-ans-why{display:inline-block;margin-left:.4rem;font-size:.66rem;font-weight:800;font-style:italic;
+  color:var(--danger,#f0455e);opacity:.85;white-space:nowrap;}
 
 .pb-speed-hint{text-align:center;font-size:.76rem;color:var(--muted);margin:.5rem auto 0;max-width:560px;}
 .pb-total-tag{font-family:var(--font-d);font-size:.66rem;font-weight:900;padding:.02rem .3rem;border-radius:999px;margin-left:.15rem;}
