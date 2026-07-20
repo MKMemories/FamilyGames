@@ -59,7 +59,10 @@ export interface Brand {
   c2: string;            // couleur signature 2
   emoji: string;         // emoji de secteur (indice)
   category: string;
-  hint: string;          // indice textuel (dévoilé progressivement)
+  hint: string;          // indice textuel final (le plus révélateur)
+  country?: string;      // 🌍 pays d'origine (indice)
+  since?: number;        // 📅 année de création (indice)
+  product?: string;      // 🏆 produit / spécialité phare (indice)
 }
 
 /* ── Quiz KHELIJ « Le Grand Mix » (formats mélangés par manche) ── */

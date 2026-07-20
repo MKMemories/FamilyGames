@@ -5,7 +5,7 @@ import { gameHistory } from "../../hooks/useGameHistory";
 import { JokerBar } from "../JokerBar";
 import { fx } from "../../lib/sound";
 import { initJokers, jokerCount, speedBonus, type JokerType } from "../../lib/jokers";
-import { pickBrand, buildOptions, monogram } from "../../lib/marquesData";
+import { pickBrand, buildOptions, brandClues } from "../../lib/marquesData";
 import type { Room, Brand } from "../../types";
 
 const MK_JOKERS: JokerType[] = ["fifty", "double", "timeplus"];
@@ -14,14 +14,13 @@ const TIMER_SEC = 16;
 const TOTAL_ROUNDS = 10;
 const mkHistory = gameHistory("marque");
 
-/* Les indices se dévoilent progressivement (0→3) au fil du chrono.
-   0 : silhouette + secteur · 1 : catégorie · 2 : monogramme · 3 : indice texte.
-   Le NOM n'apparaît jamais avant la révélation. */
-function clueStage(elapsed: number): number {
-  if (elapsed >= 9) return 3;
-  if (elapsed >= 6) return 2;
-  if (elapsed >= 3) return 1;
-  return 0;
+/* Les indices se dévoilent un par un au fil du chrono : un nouveau toutes les
+   2 secondes (catégorie → pays → année → produit → monogramme → indice final).
+   L'illustration se dé-floute au même rythme. Le NOM n'apparaît qu'à la
+   révélation. */
+const CLUE_STEP_SEC = 2;
+function revealedCount(elapsed: number, total: number): number {
+  return Math.max(1, Math.min(total, Math.floor(elapsed / CLUE_STEP_SEC) + 1));
 }
 
 /* Illustration ORIGINALE par marque : une icône produit/secteur (aucun logo
@@ -128,7 +127,6 @@ export function Marque({ room, roomId, playerId, isHost, isSolo, onLeave }: Prop
   const myAnswer = answers[playerId] !== undefined ? answers[playerId] : (pending ?? undefined);
   const submitted = answers[playerId] !== undefined || pending !== null;
   const elapsed = TIMER_SEC - timeLeft;
-  const stage = revealed ? 3 : clueStage(elapsed);
 
   /* ── Host choisit la marche à suivre ── */
   useEffect(() => {
@@ -246,6 +244,9 @@ export function Marque({ room, roomId, playerId, isHost, isSolo, onLeave }: Prop
   }
 
   const correct = brand.name;
+  const clues = brandClues(brand);
+  const shown = revealed ? clues.length : revealedCount(elapsed, clues.length);
+  const blurPx = revealed ? 0 : Math.max(1, 12 * (1 - shown / clues.length));
   const gains = revealed ? computeGains() : {};
   const fastestId = players.filter(p => answers[p.id] === correct).sort((a, b) => (times[a.id] ?? Infinity) - (times[b.id] ?? Infinity))[0]?.id;
 
@@ -270,25 +271,29 @@ export function Marque({ room, roomId, playerId, isHost, isSolo, onLeave }: Prop
         <span className="mk-shine" aria-hidden />
         <motion.div className="mk-illus" key={brand.id}
           initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", stiffness: 240, damping: 18 }}
-          style={{ filter: `blur(${revealed ? 0 : [11, 7, 3.5, 1.5][stage]}px)`, transition: "filter .6s ease" }}>
+          style={{ filter: `blur(${blurPx}px)`, transition: "filter .6s ease" }}>
           <BrandIcon icon={iconFor(brand)} />
         </motion.div>
         <span className="mk-sector" title="Secteur">{brand.emoji}</span>
-        {!revealed && stage < 2 && <span className="mk-qmark">?</span>}
+        {!revealed && shown < 2 && <span className="mk-qmark">?</span>}
       </div>
 
-      {/* Indices dévoilés + progression */}
+      {/* Indices dévoilés un par un */}
       <div className="mk-clues">
-        <motion.div className={`mk-clue ${stage >= 1 ? "on" : ""}`} animate={{ opacity: stage >= 1 ? 1 : 0.4 }}>
-          <span className="mk-clue-ic">🗂️</span>{stage >= 1 ? <b>{brand.category}</b> : <i>Catégorie…</i>}
-        </motion.div>
-        <motion.div className={`mk-clue ${stage >= 2 ? "on" : ""}`} animate={{ opacity: stage >= 2 ? 1 : 0.4 }}>
-          <span className="mk-clue-ic">🔤</span>{stage >= 2 ? <b>Initiale « {monogram(brand)} »</b> : <i>Monogramme…</i>}
-        </motion.div>
-        <motion.div className={`mk-clue ${stage >= 3 ? "on" : ""}`} animate={{ opacity: stage >= 3 ? 1 : 0.4 }}>
-          <span className="mk-clue-ic">💡</span>{stage >= 3 ? <b>{brand.hint}</b> : <i>Indice…</i>}
-        </motion.div>
-        {!revealed && <div className="mk-progress">{[0, 1, 2].map(i => <i key={i} className={stage > i ? "on" : ""} />)}</div>}
+        {clues.map((clue, i) => {
+          const on = i < shown;
+          return (
+            <motion.div key={i} className={`mk-clue ${on ? "on" : ""}`} animate={{ opacity: on ? 1 : 0.4 }}>
+              <span className="mk-clue-ic">{clue.ic}</span>
+              {on ? <b>{clue.label}</b> : <i>Indice suivant…</i>}
+            </motion.div>
+          );
+        })}
+        {!revealed && (
+          <div className="mk-progress">
+            {clues.map((_, i) => <i key={i} className={i < shown ? "on" : ""} />)}
+          </div>
+        )}
       </div>
 
       {!revealed ? (
